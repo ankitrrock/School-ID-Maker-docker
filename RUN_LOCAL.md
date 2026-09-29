@@ -6,25 +6,32 @@ The current application is `server/` plus `public/`. Docker Compose runs Postgre
 
 ## Docker (recommended)
 
-Requires Docker Engine/Desktop with Compose v2 and Python 3.
+Requires Docker Engine/Desktop with Compose v2.
 
 ```bash
-python run.py
+docker compose up --build
 ```
 
-The launcher generates a private `.env` containing a random JWT secret when no
-`.env` exists, starts the database, and waits for the application health check.
+No `.env` or manual JWT setup is needed. On first startup the container generates
+a cryptographically random 256-bit JWT signing secret, stored with private file
+permissions in the `jwt_secrets` Docker volume. Rebuilds and container restarts
+reuse it, so existing login sessions stay valid until they expire.
+
 Open http://localhost:3000. Health: http://localhost:3000/api/healthz.
+JWT session tokens are issued when a user signs up or logs in.
 
-For direct Compose use, generate `.env` first or export a random `JWT_SECRET` of
-at least 32 characters, then run `docker compose up --build`.
+An explicit `JWT_SECRET` in your environment or `.env` overrides the generated
+secret and must be at least 32 random characters. Removing or changing that
+override changes the signing key and invalidates sessions created with it.
 
 ```bash
-python run.py status
-python run.py logs
-python run.py down
-python run.py down -v  # deletes database AND uploaded image volumes
+docker compose down     # keeps database, uploads and signing secret
+docker compose down -v  # deletes all three, including the signing secret
 ```
+
+The optional Python 3 launcher `python run.py` starts the same services and waits
+for readiness. It uses the same secret volume; it does not create a `.env` file.
+Its `status`, `logs`, `down`, and `down -v` subcommands are still supported.
 
 ## Local Node
 
@@ -58,7 +65,9 @@ supported in previews, but PDF export embeds only images uploaded to this app.
 Use HTTPS and `NODE_ENV=production` for secure cookies. Set `TRUST_PROXY_HOPS` only
 to the number of reverse proxies you control (Render configuration uses one).
 The login limiter is per process; multiple app replicas need a shared limiter
-store. Back up PostgreSQL and local upload volumes, if used.
+store. Back up PostgreSQL, the signing-secret volume, and local upload volumes, if used.
+For Render or multiple replicas, set a shared persistent `JWT_SECRET` explicitly;
+auto-generation is intended for Docker deployments with the mounted secret volume.
 
 To bootstrap an admin, first register an account you control, set `ADMIN_EMAIL`
 to its email, and restart the app. Do this before opening registration publicly.

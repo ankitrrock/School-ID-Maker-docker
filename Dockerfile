@@ -5,7 +5,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY --chown=node:node server ./server
 COPY --chown=node:node public ./public
-RUN mkdir -p data/uploads && chown -R node:node data
+RUN mkdir -p data/uploads data/secrets && chown -R node:node data
 USER node
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["node", "--require", "./server/docker-env.js", "server/index.js"]

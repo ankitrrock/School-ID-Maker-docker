@@ -19,7 +19,7 @@ services:
       - "3000:3000"
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/school_id_maker
-      JWT_SECRET: ${JWT_SECRET:?Run python run.py or set JWT_SECRET to a random secret of at least 32 characters}
+      JWT_SECRET: ${JWT_SECRET:-}
       NODE_ENV: ${NODE_ENV:-development}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       SUPABASE_URL: ${SUPABASE_URL:-}
@@ -37,6 +37,7 @@ services:
       retries: 20
     volumes:
       - uploads:/app/data/uploads
+      - jwt_secrets:/app/data/secrets
     depends_on:
       db:
         condition: service_healthy
@@ -44,3 +45,4 @@ services:
 volumes:
   postgres_data:
   uploads:
+  jwt_secrets:
