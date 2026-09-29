@@ -7,10 +7,11 @@ async function qr(value) { return QRCode.toBuffer(String(value), { width: 240, m
 async function barcode(value) { return bwipjs.toBuffer({ bcid: 'code128', text: String(value), scale: 3, height: 12, includetext: true }); }
 async function pdfCards(students, org, db, userId, storage) {
   const design = CardDesign.normalize(org.card_design);
-  const logo = design.showLogo || design.showBackground ? await storage.read(db, userId, org.image_url) : null;
+  const logo = design.showLogo ? await storage.read(db, userId, org.image_url) : null;
+  const background = design.showBackground ? await storage.read(db, userId, org.background_image_url) : null;
   const cards = [];
   for (const student of students) {
-    cards.push({ scene: CardDesign.scene(org, student), images: { logo,
+    cards.push({ scene: CardDesign.scene(org, student), images: { logo, background,
       photo: design.showPhoto ? await storage.read(db, userId, student.photo_url) : null,
       qr: design.showQr ? await qr(student.student_id) : null,
       barcode: design.showBarcode ? await barcode(student.student_id) : null } });

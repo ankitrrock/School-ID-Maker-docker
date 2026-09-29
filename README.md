@@ -7,8 +7,8 @@ A multi-tenant ID-card platform for **schools, colleges and individual users**.
 1. User signs up / logs in.
 2. First login opens Organization Setup.
 3. Choose School, College or Individual.
-4. Enter organization details and upload an organization image.
-5. The image is used as the ID-card background.
+4. Enter organization details and upload a logo and a separate ID-card background.
+5. The logo appears in the header; the background fills the card with a faded image.
 6. Default background is white.
 7. User can choose background and text colors.
 8. Create classes and sections.
@@ -57,8 +57,10 @@ Pro activation remains manual/COD; online billing is not enabled.
 
 All five designs are available on Free and Pro. Choose portrait or landscape,
 background/text/accent colors, font family and size, photo shape, visible student
-fields, logo/background, QR/barcode, card title and footer. Organization logo and
-student photos are uploaded in their existing settings forms. Changes update the
+fields, logo/background, QR/barcode, card title and footer. Upload or remove the logo and background independently in **Organization settings**,
+then save. JPG, PNG and WEBP files up to 5 MB are supported. Existing combined images
+are preserved as both images on upgrade; you can replace or remove either one.
+Student photos are uploaded in the student form. Changes update the
 live preview; **Save design** persists them for the organization and PDF exports.
 Long text is shortened to fit the card, so check the preview before printing.
 

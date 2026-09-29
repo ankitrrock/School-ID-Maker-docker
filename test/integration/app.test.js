@@ -68,6 +68,36 @@ test('current application workflows against PostgreSQL', async t => {
       await request('/api/organization', 'PUT', { name: 'Test School', imageUrl: asset.url }, alice.cookie);
       await request('/api/organization', 'PUT', { name: 'Test School', imageUrl: 'javascript:alert(1)' }, alice.cookie, 400);
     });
+    await t.test('logo and background migrate once, persist independently and enforce ownership', async () => {
+      // Simulate a database from before separate backgrounds were introduced.
+      await pool.query('alter table organizations drop column background_image_url');
+      await initDb(pool);
+      let saved = (await request('/api/organization', 'GET', undefined, alice.cookie)).data.organization;
+      assert.equal(saved.background_image_url, asset.url);
+      const png = await sharp({ create: { width: 12, height: 8, channels: 3, background: '#ff9900' } }).png().toBuffer();
+      const form = new FormData(); form.append('image', new Blob([png], { type: 'image/png' }), 'background.png');
+      const upload = await fetch(base + '/api/uploads', { method: 'POST', headers: { Cookie: alice.cookie }, body: form });
+      assert.equal(upload.status, 201); const background = await upload.json();
+      await request('/api/organization', 'PUT', { name: 'Test School', backgroundImageUrl: background.url }, alice.cookie);
+      saved = (await request('/api/organization', 'GET', undefined, alice.cookie)).data.organization;
+      assert.equal(saved.image_url, asset.url); assert.equal(saved.background_image_url, background.url);
+      await request('/api/organization', 'PUT', { name: 'Other School', backgroundImageUrl: background.url }, bob.cookie, 404);
+      await request('/api/organization', 'PUT', { name: 'Test School', backgroundImageUrl: 'javascript:alert(1)' }, alice.cookie, 400);
+      await request('/api/organization', 'PUT', { name: 'Test School' }, alice.cookie);
+      assert.equal((await request('/api/organization', 'GET', undefined, alice.cookie)).data.organization.background_image_url, background.url);
+      await request('/api/organization', 'PUT', { name: 'Test School', imageUrl: null }, alice.cookie);
+      saved = (await request('/api/organization', 'GET', undefined, alice.cookie)).data.organization;
+      assert.equal(saved.image_url, null); assert.equal(saved.background_image_url, background.url);
+      await request('/api/organization', 'PUT', { name: 'Test School', imageUrl: asset.url, backgroundImageUrl: null }, alice.cookie);
+      await initDb(pool);
+      saved = (await request('/api/organization', 'GET', undefined, alice.cookie)).data.organization;
+      assert.equal(saved.image_url, asset.url); assert.equal(saved.background_image_url, null);
+      await request('/api/organization', 'PUT', { name: 'Test School', backgroundImageUrl: background.url }, alice.cookie);
+      const design = (await request('/api/card-design', 'PUT', { templateId: 'classic', cardDesign: {}, backgroundColor: '#ffffff', textColor: '#111827' }, alice.cookie)).data.organization;
+      assert.equal(design.image_url, asset.url); assert.equal(design.background_image_url, background.url);
+      const template = (await request('/api/templates', 'PUT', { templateId: 'classic' }, alice.cookie)).data.organization;
+      assert.equal(template.background_image_url, background.url);
+    });
     await t.test('card quotas are serialized, tenant checked, and PDFs contain images', async () => {
       await request('/api/bulk-cards', 'POST', { studentIds: [first.id] }, bob.cookie, 404);
       const responses = await Promise.all([1, 2, 3].map(() => fetch(base + '/api/bulk-cards', { method: 'POST', headers: { Cookie: alice.cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ studentIds: [first.id] }) })));

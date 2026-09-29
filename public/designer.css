@@ -3,3 +3,5 @@
 @media(max-width:600px){.design-choices{grid-template-columns:repeat(2,1fr)}.design-choice:last-child{grid-column:1/-1}.design-choice:last-child .design-thumb{height:70px}.top .nav{flex:0 0 100%}.designer-layout .stage{padding:12px}.enquiry-card .sect{align-items:flex-start}}
 
 #designForm input[type=color]{height:44px;padding:4px;cursor:pointer}
+
+.asset-preview{height:90px;display:flex;align-items:center;justify-content:center;margin:10px 0;background:#eef2f6;border-radius:6px}.asset-preview img{max-height:90px;max-width:100%;object-fit:contain}.drop input[type=file]{max-width:100%;padding:6px}

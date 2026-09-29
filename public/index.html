@@ -116,7 +116,7 @@ small{color:var(--mut)}.on small{color:#fff9}
     </div>
     <fieldset class="design-checks"><legend>Card elements</legend><label><input id="cardPhoto" type="checkbox"> Photo</label><label><input id="cardLogo" type="checkbox"> Logo</label><label><input id="cardBackground" type="checkbox"> Background image</label><label><input id="cardQr" type="checkbox"> QR code</label><label><input id="cardBarcode" type="checkbox"> Barcode</label></fieldset>
     <fieldset class="design-checks"><legend>Student details to display</legend><div id="designFields"></div></fieldset>
-    <p class="hint">Update your organization's name, logo and tagline in Organization settings.</p>
+    <p class="hint">Upload your logo and card background in <button type="button" class="link" data-a="nav" data-v="setup">Organization settings</button>.</p>
     <div id="designError" class="err" role="alert"></div><button class="btn primary" id="saveDesign">Save card design</button>
   </form>
   <aside class="panel sticky"><span class="eyebrow">LIVE PREVIEW</span><h2>Your next ID card</h2><div class="stage"><div id="designCard"></div></div><p class="hint">Selected student shown when available. Print the exported PDF at 100% scale.</p><div id="designSaved" role="status" class="hint"></div></aside>
@@ -139,7 +139,11 @@ small{color:var(--mut)}.on small{color:#fff9}
       <div class="f"><label for="bgColor">Card background color</label><input id="bgColor" type="color" value="#ffffff"></div>
       <div class="f"><label for="textColor">Card text color</label><input id="textColor" type="color" value="#17212b"></div>
     </div>
-    <div class="f"><label for="orgImage">Logo or background image</label><div class="drop"><input id="orgImage" type="file" accept="image/png,image/jpeg,image/webp"><div class="hint">JPG, PNG or WEBP, up to 5 MB. Shown as the logo and as a faded card background.</div></div></div>
+    <div class="g2">
+      <div class="f"><label for="orgImage">Organization logo</label><div class="drop"><input id="orgImage" type="file" accept="image/png,image/jpeg,image/webp"><div id="logoPreview" class="asset-preview"></div><button type="button" id="removeLogo" class="btn sm">Remove logo</button><div class="hint">JPG, PNG or WEBP, up to 5 MB. Shown in the card header.</div></div></div>
+      <div class="f"><label for="orgBackground">ID card background</label><div class="drop"><input id="orgBackground" type="file" accept="image/png,image/jpeg,image/webp"><div id="backgroundPreview" class="asset-preview"></div><button type="button" id="removeBackground" class="btn sm">Remove background</button><div class="hint">JPG, PNG or WEBP, up to 5 MB. Cropped to fill the card and faded for readable text.</div></div></div>
+    </div>
+    <p class="hint">Save settings to apply uploads or removals. Show or hide each image in Customize ID card.</p>
     <div id="orgErr" class="err"></div>
     <div class="row"><button class="btn primary" id="orgSave">Save and continue</button><button type="button" class="btn hidden" id="orgCancel" data-a="nav" data-v="dash">Cancel</button></div>
   </form>

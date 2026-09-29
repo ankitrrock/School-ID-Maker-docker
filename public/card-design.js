@@ -58,7 +58,7 @@
     const text = (value, x, y, w, size, bold = false, align = 'left', fill = ink) => ops.push({ type: 'text', text: fit(value, w, size, bold, design.fontFamily), x, y, w, size, bold, align, fill, font: design.fontFamily });
     const image = (source, x, y, w, h, radius = 0, opacity = 1, cover = false) => ops.push({ type: 'image', source, x, y, w, h, radius, opacity, cover });
     rect(0, 0, width, height, background, 10);
-    if (design.showBackground && org.image_url) image('logo', 0, 0, width, height, 10, 0.10, true);
+    if (design.showBackground && org.background_image_url) image('background', 0, 0, width, height, 10, 0.10, true);
     if (template === 'classic') rect(0, 0, width, 7, accent);
     if (template === 'modern') { rect(0, 0, width, 85, accent); rect(0, 85, width, 3, ink); }
     if (template === 'minimal') rect(8, 8, width - 16, height - 16, null, 4, accent);

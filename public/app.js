@@ -1,7 +1,7 @@
 const $=id=>document.getElementById(id);
 const J=(m,b)=>({method:m,headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
 const SAMPLE={name:"Aarav Sharma",student_id:"STU-1024",blood_group:"B+",date_of_birth:"2012-05-14",father_name:"Rohit Sharma",phone:"98765 43210"};
-let mode="login",me=null,org=null,classes=[],secs={},openC=null,cur=null,students=[],sel=null,q="",pend=null,mFn=null;
+let mode="login",me=null,org=null,classes=[],secs={},openC=null,cur=null,students=[],sel=null,q="",pend=undefined,pendBackground=undefined,mFn=null;
 function safeImage(value){
   if(typeof value!=="string")return "";
   if(value.startsWith("/api/assets/file?path="))return value;
@@ -32,21 +32,47 @@ function showSetup(first){$("productPanel").classList.add("hidden");$("nav").cla
   $("setupTitle").textContent=first?"Welcome. Let's set up your organization":"Organization settings";
   $("setupView").classList.remove("hidden");$("dashView").classList.add("hidden");
   if(org){document.querySelector(`input[name=otype][value=${org.organization_type}]`).checked=true;$("orgName").value=org.name;$("orgTagline").value=org.tagline;$("orgYear").value=org.academic_year;$("orgPhone").value=org.phone;$("orgAddress").value=org.address;$("bgColor").value=org.background_color;$("textColor").value=org.text_color}
-  pend=null;setupPrev()}
+  resetOrgImages();setupPrev()}
 const PH={school:"ABC Public School",college:"XYZ College",individual:"Your name or business"};
-function draft(){return{name:$("orgName").value,tagline:$("orgTagline").value,image_url:pend||org?.image_url,background_color:$("bgColor").value,text_color:$("textColor").value,template_id:org?.template_id||"classic",card_design:org?.card_design||{}}}
-function setupPrev(){$("setupCard").innerHTML=cardHTML(draft(),SAMPLE)}
-$("orgForm").addEventListener("input",e=>{if(e.target.name==="otype")$("orgName").placeholder=PH[e.target.value];if(e.target.id==="orgImage"){const f=e.target.files[0];pend=f?URL.createObjectURL(f):null}setupPrev()});
+function draft(){return{name:$("orgName").value,tagline:$("orgTagline").value,image_url:pend===undefined?org?.image_url:pend,background_image_url:pendBackground===undefined?org?.background_image_url:pendBackground,background_color:$("bgColor").value,text_color:$("textColor").value,template_id:org?.template_id||"classic",card_design:org?.card_design||{}}}
+function resetOrgImages(){
+  for(const url of [pend,pendBackground])if(url?.startsWith('blob:'))URL.revokeObjectURL(url);
+  pend=undefined;pendBackground=undefined;$('orgImage').value='';$('orgBackground').value='';
+}
+function setupPrev(){
+  const data=draft();$('setupCard').innerHTML=cardHTML(data,SAMPLE);
+  for(const [key,preview,remove,label] of [['image_url','logoPreview','removeLogo','Organization logo'],['background_image_url','backgroundPreview','removeBackground','ID background']]){
+    const src=safeImage(data[key]);$(preview).innerHTML=src?`<img src="${esc(src)}" alt="${label}">`:'<span class="hint">No image selected</span>';$(remove).disabled=!src;
+  }
+}
+$('orgForm').addEventListener('input',e=>{
+  if(e.target.name==='otype')$('orgName').placeholder=PH[e.target.value];
+  if(['orgImage','orgBackground'].includes(e.target.id)){
+    const logo=e.target.id==='orgImage',previous=logo?pend:pendBackground;
+    if(previous?.startsWith('blob:'))URL.revokeObjectURL(previous);
+    const file=e.target.files[0],next=file?URL.createObjectURL(file):undefined;
+    if(logo)pend=next;else pendBackground=next;
+  }
+  setupPrev();
+});
+for(const [button,input,logo] of [['removeLogo','orgImage',true],['removeBackground','orgBackground',false]]){
+  $(button).onclick=()=>{
+    const previous=logo?pend:pendBackground;if(previous?.startsWith('blob:'))URL.revokeObjectURL(previous);
+    if(logo)pend=null;else pendBackground=null;$(input).value='';setupPrev();
+  };
+}
 $("orgForm").onsubmit=async e=>{e.preventDefault();$("orgErr").textContent="";
-  await busy($("orgSave"),async()=>{try{let imageUrl=org?.image_url||null;const u=await upload($("orgImage"));if(u)imageUrl=u;
-    org=(await api("/api/organization",J("PUT",{organizationType:document.querySelector("input[name=otype]:checked").value,name:$("orgName").value,tagline:$("orgTagline").value,address:$("orgAddress").value,phone:$("orgPhone").value,academicYear:$("orgYear").value,imageUrl,backgroundColor:$("bgColor").value,textColor:$("textColor").value}))).organization;
-    $("nav").classList.remove("hidden");toast("Settings saved");show("dash");await loadClasses();prev()}catch(x){$("orgErr").textContent=x.message}})};
+  await busy($("orgSave"),async()=>{try{let imageUrl=draft().image_url||null,backgroundImageUrl=draft().background_image_url||null;
+    const u=await upload($("orgImage"));if(u)imageUrl=u;
+    const background=await upload($("orgBackground"));if(background)backgroundImageUrl=background;
+    org=(await api("/api/organization",J("PUT",{organizationType:document.querySelector("input[name=otype]:checked").value,name:$("orgName").value,tagline:$("orgTagline").value,address:$("orgAddress").value,phone:$("orgPhone").value,academicYear:$("orgYear").value,imageUrl,backgroundImageUrl,backgroundColor:$("bgColor").value,textColor:$("textColor").value}))).organization;
+    resetOrgImages();$("nav").classList.remove("hidden");toast("Settings saved");show("dash");await loadClasses();prev()}catch(x){$("orgErr").textContent=x.message}})};
 
 /* ---- ID card ---- */
 let cardRenderId=0;
 function cardHTML(o,s){
   const scene=CardDesign.scene(o,s),uid=++cardRenderId;
-  const sources={logo:safeImage(o.image_url),photo:safeImage(s.photo_url),qr:'/api/qr?format=png&value='+encodeURIComponent(s.student_id||'SAMPLE'),barcode:'/api/barcode?format=png&value='+encodeURIComponent(s.student_id||'SAMPLE')};
+  const sources={logo:safeImage(o.image_url),background:safeImage(o.background_image_url),photo:safeImage(s.photo_url),qr:'/api/qr?format=png&value='+encodeURIComponent(s.student_id||'SAMPLE'),barcode:'/api/barcode?format=png&value='+encodeURIComponent(s.student_id||'SAMPLE')};
   const fonts={sans:'Arial, sans-serif',serif:'Times New Roman, serif',mono:'Courier New, monospace'};
   const content=scene.ops.map((op,index)=>{
     if(op.type==='rect')return `<rect x="${op.x}" y="${op.y}" width="${op.w}" height="${op.h}" rx="${op.radius}" fill="${op.fill||'none'}" stroke="${op.stroke||'none'}"/>`;

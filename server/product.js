@@ -54,7 +54,7 @@ function registerProductRoutes(app, pool, auth, upload, storage) {
       if (!TEMPLATES.slice(0, planOf(org).templates).some(template => template.id === req.body.templateId)) throw problem(400, 'Choose one of the five card designs.');
       return (await db.query('update organizations set template_id=$2 where id=$1 returning *', [org.id, req.body.templateId])).rows[0];
     });
-    res.json({ organization: { ...org, image_url: storage.stableUrl(org.image_url) } });
+    res.json({ organization: { ...org, image_url: storage.stableUrl(org.image_url), background_image_url: storage.stableUrl(org.background_image_url) } });
   });
   app.put('/api/card-design', auth, async (req, res) => {
     let design;
@@ -64,7 +64,7 @@ function registerProductRoutes(app, pool, auth, upload, storage) {
     const org = await withOrganization(pool, req.user.id, async (db, org) => (await db.query(
       'update organizations set template_id=$2,card_design=$3,background_color=$4,text_color=$5,updated_at=now() where id=$1 returning *',
       [org.id, req.body.templateId, JSON.stringify(design), req.body.backgroundColor, req.body.textColor])).rows[0]);
-    res.json({ organization: { ...org, image_url: storage.stableUrl(org.image_url) } });
+    res.json({ organization: { ...org, image_url: storage.stableUrl(org.image_url), background_image_url: storage.stableUrl(org.background_image_url) } });
   });
   app.post(['/api/uploads', '/api/assets/upload'], auth, upload.single('image'), async (req, res) => {
     if (!req.file) throw problem(400, 'Image is required.');
