@@ -103,7 +103,7 @@ function registerProductRoutes(app,pool,auth,upload){
   }catch(e){res.status(500).json({message:e.message});}
  });
 
- app.post("/api/bulk-import/:sectionId",auth,express.raw({type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",limit:"10mb"}),async(req,res)=>{
+ app.post("/api/bulk-import/:sectionId",auth,(req,res,next)=>next(),async(req,res)=>{
   try{
    const org=await orgFor(pool,req.user.id);if(!org)return res.status(404).json({message:"Organization not found."});
    if(!planOf(org).bulkExcel)return res.status(402).json({message:"Bulk Excel import is available on Pro."});
