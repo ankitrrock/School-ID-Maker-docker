@@ -8,15 +8,15 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL","pg_isready -U postgres -d school_id_maker"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d school_id_maker']
       interval: 5s
       timeout: 5s
       retries: 20
 
   upload-permissions:
     image: busybox:1.36
-    user: "0:0"
-    command: ["sh", "-c", "chown -R 1000:1000 /uploads /secrets"]
+    user: '0:0'
+    command: ['sh', '-c', 'chown -R 1000:1000 /uploads /secrets']
     volumes:
       - uploads:/uploads
       - jwt_secrets:/secrets
@@ -24,7 +24,7 @@ services:
   app:
     build: .
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/school_id_maker
       JWT_SECRET: ${JWT_SECRET:-}
@@ -40,7 +40,13 @@ services:
       PRO_CARD_LIMIT: ${PRO_CARD_LIMIT:-5000}
       PORT: 3000
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3000/api/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
       interval: 5s
       timeout: 5s
       retries: 20

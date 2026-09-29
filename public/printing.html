@@ -1,40 +1,238 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Print Studio — Printing for your business & celebrations</title>
-  <meta name="description" content="Explore flex boards, wedding cards, personalized mugs, custom T-shirts and ID cards. Send your requirements to request a printing quote.">
-  <link rel="stylesheet" href="/printing.css">
-  <script src="/print-products.js" defer></script><script src="/printing.js" defer></script>
-<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#174f42"><script src="/pwa.js" defer></script></head>
-<body>
-  <div class="topline">YOUR IDEAS. BEAUTIFULLY PRINTED. <a href="/">Open ID Card Studio ↗</a></div>
-  <header class="shop-header">
-    <a href="/printing" class="brand"><span class="brand-mark" aria-hidden="true">p<span>•</span></span><span data-shop-name>Print Studio</span></a>
-    <nav aria-label="Main navigation"><a href="/orders">My print requests</a><button id="installApp" class="button small" hidden>Install app</button><a href="#products">Our products</a><a href="#how">How it works</a><a class="button small" href="#quote">Request a quote ↗</a></nav>
-  </header>
-  <main>
-    <section class="hero">
-      <div class="hero-copy"><p class="eyebrow">A PRINT FOR EVERY POSSIBILITY</p><h1>Small details.<br><span>Big impressions.</span></h1><p>From your shop’s first sign to your wedding invitation. Find the right print, make it yours, and bring your idea to life.</p><a class="button" href="#products">Explore our products <span>↓</span></a><div class="hero-tags"><span>Custom designs</span><span>Personal & bulk orders</span><span>Made for your occasion</span></div></div>
-      <div class="hero-art" role="img" aria-label="Illustrations of a printed T-shirt, wedding invitation and personalized mug"><span class="art-note">a little ink.<br>a lot of possibility.</span><div class="hero-shirt shirt-art"><span>MAKE<br>IT YOURS<span class="spark">✳</span></span></div><div class="hero-invite invite-art"><span>TOGETHER<br><b>forever</b><i>THE WEDDING CELEBRATION</i></span></div><div class="hero-mug mug-art"><span>good<br><b>days.</b></span></div><span class="art-star">✳</span><span class="art-label">DESIGNED BY YOU. PRINTED FOR YOU.</span></div>
-    </section>
-    <section id="products" class="catalog section">
-      <div class="section-heading"><div><p class="eyebrow">THE PRINT COLLECTION</p><h2>What are we making today?</h2></div><label class="search"><span class="sr-only">Search printing products</span><input id="searchProducts" type="search" placeholder="Search products…"><span aria-hidden="true">⌕</span></label></div>
-      <div class="categories" id="categories" role="group" aria-label="Filter product category"></div>
-      <div class="product-grid" id="productGrid"></div><p id="emptyProducts" hidden>No products found. Try another search or category.</p>
-    </section>
-    <section id="how" class="how section"><div><p class="eyebrow">FROM IDEA TO INK</p><h2>Your print.<br>Three simple steps.</h2><p>A clear brief makes a better print.</p></div><ol><li><span>01</span><div><h3>Find your product</h3><p>Choose what you need, from a single gift to a batch of business essentials.</p></div></li><li><span>02</span><div><h3>Tell us the details</h3><p>Share your quantity, sizes, finish and design requirements.</p></div></li><li><span>03</span><div><h3>Discuss your quote</h3><p>The print shop can contact you to confirm artwork, pricing and delivery before your order.</p></div></li></ol></section>
-    <section class="studio-banner section"><div><p class="eyebrow">MEET YOUR NEW ID CARD STUDIO</p><h2>A little more you.<br>On every ID.</h2><p>Five designs. Your colors, photos and details.<br>Customize your cards and download a print-ready PDF.</p><a href="/" class="button light">Start designing ↗</a></div><div class="mini-ids" aria-hidden="true"><div><span>YOUR SCHOOL</span><b>☺</b><strong>CLASSIC</strong><i>||||||||||||</i></div><div><span>YOUR TEAM</span><b>☺</b><strong>MODERN</strong><i>||||||||||||</i></div></div></section>
-    <section id="quote" class="quote section"><div class="quote-intro"><p class="eyebrow">LET’S MAKE SOMETHING</p><h2>Your next great<br>print starts here.</h2><p>Tell us what you have in mind. Your request goes directly to the print shop’s enquiry inbox.</p><div class="quote-note"><span>↗</span><p>Have artwork ready? Mention it below. The shop can arrange artwork sharing when discussing your quote.</p></div></div>
-      <form id="quoteForm"><h3>Request a quote</h3><p class="form-hint">No payment required. Fields marked * are required.</p><div class="form-grid">
-        <label>Product *<select id="quoteProduct" name="productId" required></select></label><label>Print option *<select id="quoteOption" name="productOption" required></select></label>
-        <label>Quantity *<input name="quantity" type="number" min="1" max="100000" step="1" value="1" required></label><label>City *<input name="city" maxlength="100" autocomplete="address-level2" required placeholder="Your city"></label>
-        <label>Your name *<input name="name" maxlength="100" autocomplete="name" required placeholder="Full name"></label><label>Phone *<input name="phone" type="tel" maxlength="24" autocomplete="tel" required placeholder="10–15 digits"></label>
-        <label class="full">Email <span>(optional)</span><input name="email" type="email" maxlength="254" autocomplete="email" placeholder="you@example.com"></label>
-        <label class="full">Printing requirements <span>(optional)</span><textarea name="details" id="quoteDetails" maxlength="2000" rows="4" aria-describedby="detailsHint"></textarea><small id="detailsHint"></small></label>
-      </div><p class="privacy-note">Your contact details will be shared with the print shop to respond to this enquiry.</p><p id="quoteError" role="alert" class="form-error" hidden></p><div id="quoteSuccess" role="status" class="form-success" hidden></div><button class="button" id="sendQuote" type="submit">Send quote request ↗</button><p class="form-hint">Pricing and delivery are confirmed by the shop after reviewing your requirements.</p></form>
-    </section>
-  </main>
-  <footer><a href="/printing" class="brand"><span class="brand-mark" aria-hidden="true">p<span>•</span></span><span data-shop-name>Print Studio</span></a><p>For businesses. For celebrations. For you.</p><a href="/">ID Card Studio ↗</a></footer>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Print Studio — Printing for your business & celebrations</title>
+    <meta
+      name="description"
+      content="Explore flex boards, wedding cards, personalized mugs, custom T-shirts and ID cards. Send your requirements to request a printing quote."
+    />
+    <link rel="stylesheet" href="/printing.css" />
+    <script src="/print-products.js" defer></script>
+    <script src="/printing.js" defer></script>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#174f42" />
+    <script src="/pwa.js" defer></script>
+  </head>
+  <body>
+    <div class="topline">
+      YOUR IDEAS. BEAUTIFULLY PRINTED. <a href="/">Open ID Card Studio ↗</a>
+    </div>
+    <header class="shop-header">
+      <a href="/printing" class="brand"
+        ><span class="brand-mark" aria-hidden="true">p<span>•</span></span
+        ><span data-shop-name>Print Studio</span></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="/orders">My print requests</a
+        ><button id="installApp" class="button small" hidden>Install app</button
+        ><a href="#products">Our products</a><a href="#how">How it works</a
+        ><a class="button small" href="#quote">Request a quote ↗</a>
+      </nav>
+    </header>
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">A PRINT FOR EVERY POSSIBILITY</p>
+          <h1>Small details.<br /><span>Big impressions.</span></h1>
+          <p>
+            From your shop’s first sign to your wedding invitation. Find the right print, make it
+            yours, and bring your idea to life.
+          </p>
+          <a class="button" href="#products">Explore our products <span>↓</span></a>
+          <div class="hero-tags">
+            <span>Custom designs</span><span>Personal & bulk orders</span
+            ><span>Made for your occasion</span>
+          </div>
+        </div>
+        <div
+          class="hero-art"
+          role="img"
+          aria-label="Illustrations of a printed T-shirt, wedding invitation and personalized mug"
+        >
+          <span class="art-note">a little ink.<br />a lot of possibility.</span>
+          <div class="hero-shirt shirt-art">
+            <span>MAKE<br />IT YOURS<span class="spark">✳</span></span>
+          </div>
+          <div class="hero-invite invite-art">
+            <span>TOGETHER<br /><b>forever</b><i>THE WEDDING CELEBRATION</i></span>
+          </div>
+          <div class="hero-mug mug-art">
+            <span>good<br /><b>days.</b></span>
+          </div>
+          <span class="art-star">✳</span
+          ><span class="art-label">DESIGNED BY YOU. PRINTED FOR YOU.</span>
+        </div>
+      </section>
+      <section id="products" class="catalog section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">THE PRINT COLLECTION</p>
+            <h2>What are we making today?</h2>
+          </div>
+          <label class="search"
+            ><span class="sr-only">Search printing products</span
+            ><input id="searchProducts" type="search" placeholder="Search products…" /><span
+              aria-hidden="true"
+              >⌕</span
+            ></label
+          >
+        </div>
+        <div
+          class="categories"
+          id="categories"
+          role="group"
+          aria-label="Filter product category"
+        ></div>
+        <div class="product-grid" id="productGrid"></div>
+        <p id="emptyProducts" hidden>No products found. Try another search or category.</p>
+      </section>
+      <section id="how" class="how section">
+        <div>
+          <p class="eyebrow">FROM IDEA TO INK</p>
+          <h2>Your print.<br />Three simple steps.</h2>
+          <p>A clear brief makes a better print.</p>
+        </div>
+        <ol>
+          <li>
+            <span>01</span>
+            <div>
+              <h3>Find your product</h3>
+              <p>Choose what you need, from a single gift to a batch of business essentials.</p>
+            </div>
+          </li>
+          <li>
+            <span>02</span>
+            <div>
+              <h3>Tell us the details</h3>
+              <p>Share your quantity, sizes, finish and design requirements.</p>
+            </div>
+          </li>
+          <li>
+            <span>03</span>
+            <div>
+              <h3>Discuss your quote</h3>
+              <p>
+                The print shop can contact you to confirm artwork, pricing and delivery before your
+                order.
+              </p>
+            </div>
+          </li>
+        </ol>
+      </section>
+      <section class="studio-banner section">
+        <div>
+          <p class="eyebrow">MEET YOUR NEW ID CARD STUDIO</p>
+          <h2>A little more you.<br />On every ID.</h2>
+          <p>
+            Five designs. Your colors, photos and details.<br />Customize your cards and download a
+            print-ready PDF.
+          </p>
+          <a href="/" class="button light">Start designing ↗</a>
+        </div>
+        <div class="mini-ids" aria-hidden="true">
+          <div><span>YOUR SCHOOL</span><b>☺</b><strong>CLASSIC</strong><i>||||||||||||</i></div>
+          <div><span>YOUR TEAM</span><b>☺</b><strong>MODERN</strong><i>||||||||||||</i></div>
+        </div>
+      </section>
+      <section id="quote" class="quote section">
+        <div class="quote-intro">
+          <p class="eyebrow">LET’S MAKE SOMETHING</p>
+          <h2>Your next great<br />print starts here.</h2>
+          <p>
+            Tell us what you have in mind. Your request goes directly to the print shop’s enquiry
+            inbox.
+          </p>
+          <div class="quote-note">
+            <span>↗</span>
+            <p>
+              Have artwork ready? Mention it below. The shop can arrange artwork sharing when
+              discussing your quote.
+            </p>
+          </div>
+        </div>
+        <form id="quoteForm">
+          <h3>Request a quote</h3>
+          <p class="form-hint">No payment required. Fields marked * are required.</p>
+          <div class="form-grid">
+            <label>Product *<select id="quoteProduct" name="productId" required></select></label
+            ><label
+              >Print option *<select id="quoteOption" name="productOption" required></select
+            ></label>
+            <label
+              >Quantity *<input
+                name="quantity"
+                type="number"
+                min="1"
+                max="100000"
+                step="1"
+                value="1"
+                required /></label
+            ><label
+              >City *<input
+                name="city"
+                maxlength="100"
+                autocomplete="address-level2"
+                required
+                placeholder="Your city"
+            /></label>
+            <label
+              >Your name *<input
+                name="name"
+                maxlength="100"
+                autocomplete="name"
+                required
+                placeholder="Full name" /></label
+            ><label
+              >Phone *<input
+                name="phone"
+                type="tel"
+                maxlength="24"
+                autocomplete="tel"
+                required
+                placeholder="10–15 digits"
+            /></label>
+            <label class="full"
+              >Email <span>(optional)</span
+              ><input
+                name="email"
+                type="email"
+                maxlength="254"
+                autocomplete="email"
+                placeholder="you@example.com"
+            /></label>
+            <label class="full"
+              >Printing requirements <span>(optional)</span
+              ><textarea
+                name="details"
+                id="quoteDetails"
+                maxlength="2000"
+                rows="4"
+                aria-describedby="detailsHint"
+              ></textarea
+              ><small id="detailsHint"></small
+            ></label>
+          </div>
+          <p class="privacy-note">
+            Your contact details will be shared with the print shop to respond to this enquiry.
+          </p>
+          <p id="quoteError" role="alert" class="form-error" hidden></p>
+          <div id="quoteSuccess" role="status" class="form-success" hidden></div>
+          <button class="button" id="sendQuote" type="submit">Send quote request ↗</button>
+          <p class="form-hint">
+            Pricing and delivery are confirmed by the shop after reviewing your requirements.
+          </p>
+        </form>
+      </section>
+    </main>
+    <footer>
+      <a href="/printing" class="brand"
+        ><span class="brand-mark" aria-hidden="true">p<span>•</span></span
+        ><span data-shop-name>Print Studio</span></a
+      >
+      <p>For businesses. For celebrations. For you.</p>
+      <a href="/">ID Card Studio ↗</a>
+    </footer>
+  </body>
 </html>

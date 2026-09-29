@@ -1,8 +1,8 @@
-node_modules
-.git
-.env
-.env.*
-data
-artifacts
-lib
-test
+*
+!package.json
+!package-lock.json
+!server/
+!server/**
+!public/
+!public/**
+!Dockerfile

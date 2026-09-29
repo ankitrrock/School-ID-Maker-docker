@@ -69,29 +69,52 @@ async function initAdminDb(pool) {
     end $$;
   `);
   // Triggers run in the same transaction as the action, so rolled-back work is not logged.
-  const tables = { users: 'insert or update', organizations: 'insert or update', classes: 'insert', sections: 'insert', students: 'insert or update or delete', usage_counters: 'update', payment_requests: 'insert or update', print_enquiries: 'insert or update', asset_uploads: 'insert', print_jobs: 'insert or update' };
+  const tables = {
+    users: 'insert or update',
+    organizations: 'insert or update',
+    classes: 'insert',
+    sections: 'insert',
+    students: 'insert or update or delete',
+    usage_counters: 'update',
+    payment_requests: 'insert or update',
+    print_enquiries: 'insert or update',
+    asset_uploads: 'insert',
+    print_jobs: 'insert or update',
+  };
   for (const [table, events] of Object.entries(tables)) {
-    await pool.query(`create or replace trigger platform_activity after ${events} on ${table} for each row execute function track_platform_activity()`);
+    await pool.query(
+      `create or replace trigger platform_activity after ${events} on ${table} for each row execute function track_platform_activity()`,
+    );
   }
 }
 function filters(query, statuses = []) {
-  const page = Number(query.page || 1), q = query.q || '', status = query.status || '';
-  if (!Number.isSafeInteger(page) || page < 1 || page > 100000) throw problem(400, 'Choose a valid page.');
-  if (typeof q !== 'string' || q.length > 150) throw problem(400, 'Search must be up to 150 characters.');
-  if (typeof status !== 'string' || (status && !statuses.includes(status))) throw problem(400, 'Invalid filter.');
+  const page = Number(query.page || 1),
+    q = query.q || '',
+    status = query.status || '';
+  if (!Number.isSafeInteger(page) || page < 1 || page > 100000)
+    throw problem(400, 'Choose a valid page.');
+  if (typeof q !== 'string' || q.length > 150)
+    throw problem(400, 'Search must be up to 150 characters.');
+  if (typeof status !== 'string' || (status && !statuses.includes(status)))
+    throw problem(400, 'Invalid filter.');
   return { page, q: q.trim(), status, offset: (page - 1) * 25 };
 }
 async function list(pool, query, from, columns, where, order, key, statuses = []) {
-  const f = filters(query, statuses), args = [f.q, f.status];
+  const f = filters(query, statuses),
+    args = [f.q, f.status];
   const count = await pool.query(`select count(*)::int total ${from} where ${where}`, args);
-  const rows = await pool.query(`select ${columns} ${from} where ${where} order by ${order} limit 25 offset $3`, [...args, f.offset]);
+  const rows = await pool.query(
+    `select ${columns} ${from} where ${where} order by ${order} limit 25 offset $3`,
+    [...args, f.offset],
+  );
   return { [key]: rows.rows, total: count.rows[0].total, page: f.page, pageSize: 25 };
 }
 function registerAdminRoutes(app, pool, auth) {
   app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'admin.html')));
   app.use('/api/admin', auth, (req, res, next) => {
     if (req.user.role !== 'admin') throw problem(403, 'Admin access required.');
-    res.set('Cache-Control', 'no-store'); next();
+    res.set('Cache-Control', 'no-store');
+    next();
   });
   app.get('/api/admin/overview', async (req, res) => {
     const result = await pool.query(`select
@@ -115,38 +138,118 @@ function registerAdminRoutes(app, pool, auth) {
       left join activity_events e on (e.created_at at time zone 'UTC')::date=bucket::date group by bucket order by bucket`);
     res.json({ ...result.rows[0], trends: trends.rows, plans: PLANS });
   });
-  app.get('/api/admin/users', async (req, res) => res.json(await list(pool, req.query,
-    'from users u left join organizations o on o.user_id=u.id',
-    'u.id,u.name,u.email,u.role,u.created_at,u.last_login_at,o.id organization_id,o.name organization_name,o.plan',
-    "($1='' or strpos(lower(u.name||' '||u.email),lower($1))>0) and ($2='' or u.role=$2)", 'u.created_at desc,u.id desc', 'users', ['user', 'admin'])));
-  app.get('/api/admin/organizations', async (req, res) => res.json(await list(pool, req.query,
-    'from organizations o join users u on u.id=o.user_id left join usage_counters uc on uc.organization_id=o.id',
-    `o.id,o.name,o.organization_type,o.plan,o.subscription_status,o.template_id,o.phone,o.created_at,u.email,
+  app.get('/api/admin/users', async (req, res) =>
+    res.json(
+      await list(
+        pool,
+        req.query,
+        'from users u left join organizations o on o.user_id=u.id',
+        'u.id,u.name,u.email,u.role,u.created_at,u.last_login_at,o.id organization_id,o.name organization_name,o.plan',
+        "($1='' or strpos(lower(u.name||' '||u.email),lower($1))>0) and ($2='' or u.role=$2)",
+        'u.created_at desc,u.id desc',
+        'users',
+        ['user', 'admin'],
+      ),
+    ),
+  );
+  app.get('/api/admin/organizations', async (req, res) =>
+    res.json(
+      await list(
+        pool,
+        req.query,
+        'from organizations o join users u on u.id=o.user_id left join usage_counters uc on uc.organization_id=o.id',
+        `o.id,o.name,o.organization_type,o.plan,o.subscription_status,o.template_id,o.phone,o.created_at,u.email,
      o.image_url is not null has_logo,o.background_image_url is not null has_background,coalesce(uc.cards_generated,0) cards_generated,
      (select count(*)::int from classes c where c.organization_id=o.id) classes,
      (select count(*)::int from sections s join classes c on c.id=s.class_id where c.organization_id=o.id) sections,
      (select count(*)::int from students st join sections s on s.id=st.section_id join classes c on c.id=s.class_id where c.organization_id=o.id) students`,
-    "($1='' or strpos(lower(o.name||' '||u.email),lower($1))>0) and ($2='' or o.plan=$2)", 'o.created_at desc,o.id desc', 'organizations', ['free', 'pro'])));
-  app.get('/api/admin/students', async (req, res) => res.json(await list(pool, req.query,
-    'from students st join sections s on s.id=st.section_id join classes c on c.id=s.class_id join organizations o on o.id=c.organization_id',
-    `st.id,st.student_id,st.name,st.created_at,st.photo_url is not null has_photo,o.card_design->>'orientation' orientation,s.name section_name,c.name class_name,o.name organization_name`,
-    "($1='' or strpos(lower(st.name||' '||st.student_id||' '||o.name),lower($1))>0) and $2=''", 'st.created_at desc,st.id desc', 'students')));
-  app.get('/api/admin/payment-requests', async (req, res) => res.json(await list(pool, req.query,
-    'from payment_requests p join organizations o on o.id=p.organization_id join users u on u.id=p.user_id left join users a on a.id=p.approved_by',
-    'p.id,p.organization_id,p.plan_code,p.amount,p.status,p.note,p.created_at,p.approved_at,o.name organization_name,u.email,a.email reviewed_by',
-    "($1='' or strpos(lower(o.name||' '||u.email),lower($1))>0) and ($2='' or p.status=$2)", 'p.created_at desc,p.id desc', 'requests', ['pending', 'approved', 'rejected'])));
-  app.get('/api/admin/uploads', async (req, res) => res.json(await list(pool, req.query,
-    'from asset_uploads a left join users u on u.id=a.user_id left join organizations o on o.user_id=a.user_id',
-    'a.id,a.media_type,a.size_bytes,a.created_at,u.name,u.email,o.name organization_name',
-    "($1='' or strpos(lower(coalesce(u.email,'')||' '||coalesce(o.name,'')),lower($1))>0) and $2=''", 'a.created_at desc,a.id desc', 'uploads')));
-  app.get('/api/admin/print-jobs', async (req,res) => res.json(await list(pool,req.query,
-    'from print_jobs j join users u on u.id=j.user_id',
-    'j.id,j.title,j.kind,j.product_id,j.quantity,j.layout,j.status,j.created_at,u.name,u.email',
-    "($1='' or strpos(lower(j.title||' '||u.email),lower($1))>0) and ($2='' or j.status=$2)",
-    'j.created_at desc,j.id desc','jobs',['requested','ready','printed','cancelled'])));
-  app.get('/api/admin/activity', async (req, res) => res.json(await list(pool, req.query,
-    'from activity_events e left join users u on u.id=e.account_id left join organizations o on o.id=e.organization_id',
-    'e.id,e.action,e.entity_id,e.quantity,e.created_at,u.name,u.email,o.name organization_name',
-    "($1='' or strpos(lower(e.action||' '||coalesce(u.email,'')||' '||coalesce(o.name,'')),lower($1))>0) and ($2='' or split_part(e.action,'.',1)=$2)", 'e.created_at desc,e.id desc', 'events', ['account', 'organization', 'class', 'section', 'student', 'design', 'cards', 'payment', 'plan', 'enquiry', 'image', 'print'])));
+        "($1='' or strpos(lower(o.name||' '||u.email),lower($1))>0) and ($2='' or o.plan=$2)",
+        'o.created_at desc,o.id desc',
+        'organizations',
+        ['free', 'pro'],
+      ),
+    ),
+  );
+  app.get('/api/admin/students', async (req, res) =>
+    res.json(
+      await list(
+        pool,
+        req.query,
+        'from students st join sections s on s.id=st.section_id join classes c on c.id=s.class_id join organizations o on o.id=c.organization_id',
+        `st.id,st.student_id,st.name,st.created_at,st.photo_url is not null has_photo,o.card_design->>'orientation' orientation,s.name section_name,c.name class_name,o.name organization_name`,
+        "($1='' or strpos(lower(st.name||' '||st.student_id||' '||o.name),lower($1))>0) and $2=''",
+        'st.created_at desc,st.id desc',
+        'students',
+      ),
+    ),
+  );
+  app.get('/api/admin/payment-requests', async (req, res) =>
+    res.json(
+      await list(
+        pool,
+        req.query,
+        'from payment_requests p join organizations o on o.id=p.organization_id join users u on u.id=p.user_id left join users a on a.id=p.approved_by',
+        'p.id,p.organization_id,p.plan_code,p.amount,p.status,p.note,p.created_at,p.approved_at,o.name organization_name,u.email,a.email reviewed_by',
+        "($1='' or strpos(lower(o.name||' '||u.email),lower($1))>0) and ($2='' or p.status=$2)",
+        'p.created_at desc,p.id desc',
+        'requests',
+        ['pending', 'approved', 'rejected'],
+      ),
+    ),
+  );
+  app.get('/api/admin/uploads', async (req, res) =>
+    res.json(
+      await list(
+        pool,
+        req.query,
+        'from asset_uploads a left join users u on u.id=a.user_id left join organizations o on o.user_id=a.user_id',
+        'a.id,a.media_type,a.size_bytes,a.created_at,u.name,u.email,o.name organization_name',
+        "($1='' or strpos(lower(coalesce(u.email,'')||' '||coalesce(o.name,'')),lower($1))>0) and $2=''",
+        'a.created_at desc,a.id desc',
+        'uploads',
+      ),
+    ),
+  );
+  app.get('/api/admin/print-jobs', async (req, res) =>
+    res.json(
+      await list(
+        pool,
+        req.query,
+        'from print_jobs j join users u on u.id=j.user_id',
+        'j.id,j.title,j.kind,j.product_id,j.quantity,j.layout,j.status,j.created_at,u.name,u.email',
+        "($1='' or strpos(lower(j.title||' '||u.email),lower($1))>0) and ($2='' or j.status=$2)",
+        'j.created_at desc,j.id desc',
+        'jobs',
+        ['requested', 'ready', 'printed', 'cancelled'],
+      ),
+    ),
+  );
+  app.get('/api/admin/activity', async (req, res) =>
+    res.json(
+      await list(
+        pool,
+        req.query,
+        'from activity_events e left join users u on u.id=e.account_id left join organizations o on o.id=e.organization_id',
+        'e.id,e.action,e.entity_id,e.quantity,e.created_at,u.name,u.email,o.name organization_name',
+        "($1='' or strpos(lower(e.action||' '||coalesce(u.email,'')||' '||coalesce(o.name,'')),lower($1))>0) and ($2='' or split_part(e.action,'.',1)=$2)",
+        'e.created_at desc,e.id desc',
+        'events',
+        [
+          'account',
+          'organization',
+          'class',
+          'section',
+          'student',
+          'design',
+          'cards',
+          'payment',
+          'plan',
+          'enquiry',
+          'image',
+          'print',
+        ],
+      ),
+    ),
+  );
 }
 module.exports = { initAdminDb, registerAdminRoutes, filters };

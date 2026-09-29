@@ -1,11 +1,175 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#174f42"><title>Print requests — Print Studio</title><link rel="manifest" href="/manifest.webmanifest"><link rel="stylesheet" href="/orders.css"><script src="/print-options.js" defer></script><script src="/print-products.js" defer></script><script src="/orders.js" defer></script><script src="/pwa.js" defer></script></head><body>
-<header><a href="/printing" class="brand">Print Studio</a><nav><a href="/">ID Card Studio</a><a href="/printing">Products</a><a href="/admin" id="adminLink" hidden>Admin dashboard</a><button id="installApp" hidden>Install app</button></nav></header>
-<main><section id="loginPanel" class="panel" hidden><h1>Sign in to request printing</h1><p>Use your ID Card Studio account.</p><form id="login"><label>Email<input name="email" type="email" autocomplete="username" required></label><label>Password<input name="password" type="password" autocomplete="current-password" required></label><button id="loginButton">Sign in</button></form><p>New here? <a href="/">Create an account</a>, then return to this page.</p></section>
-<p id="error" role="alert" hidden></p><p id="notice" role="status"></p>
-<div id="content" hidden><div class="heading"><div><p class="eyebrow">FROM DESIGN TO PRINT</p><h1 id="title">My print requests</h1></div><button id="newRequest" type="button">New request</button></div>
-<section id="requestPanel" class="panel"><h2 id="formTitle">Send artwork to the print shop</h2><p id="sourceHint">Upload a JPG, PNG or WEBP image, up to 5 MB and 16 megapixels. The original resolution is kept for printing.</p><form id="jobForm"><div class="grid"><label>Request title<input id="jobTitle" required maxlength="150" placeholder="e.g. Staff ID or event banner"></label><label>Product<select id="product"></select></label><label id="artworkLabel" class="full">Artwork<input id="artwork" type="file" accept="image/png,image/jpeg,image/webp"></label><label>Requested quantity<input id="quantity" type="number" min="1" max="100000" value="1" required></label><label>Size preset<select id="preset"></select></label></div>
-<fieldset><legend>Print size</legend><div class="grid"><label>Units<select id="unit"><option value="mm">Millimetres</option><option value="cm">Centimetres</option><option value="in">Inches</option></select></label><label>Width<input id="width" type="number" step="any" min="0.1" required></label><label>Height<input id="height" type="number" step="any" min="0.1" required></label><label>Paper<select id="paper"><option value="match">Match item size / roll media</option><option value="A4">A4</option><option value="A3">A3</option><option value="Letter">Letter</option></select></label><label>Paper orientation<select id="orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label><label>Margin (mm)<input id="margin" type="number" min="0" max="25" step="any" value="0"></label><label>Artwork fit<select id="fit"><option value="contain">Fit inside — keep full design</option><option value="cover">Fill area — crop edges</option></select></label><label>Copies in this batch<input id="copies" type="number" min="1" max="20" value="1" required></label></div><p id="sizeSummary" class="hint"></p></fieldset>
-<p class="hint">One item per page. Match the paper size in the printer driver and use 100% / Actual size. Mug and T-shirt dimensions describe the transfer artwork; use the right transfer printer and finishing equipment. Large flex sizes need a suitable wide-format printer.</p><button id="saveJob" type="submit">Submit print request</button><a href="#history" id="historyLink">View my requests</a></form></section>
-<section id="jobPanel" class="panel" hidden><h2 id="jobHeading"></h2><p id="jobDetails"></p><p id="jobStatus"></p><div id="adminActions" hidden><p>Prepare saves the size settings above. Then open the print document and choose an installed printer. Closing the dialog does not confirm printing.</p><div class="actions"><a id="openPrint" target="_blank" rel="noopener">Open print document</a><a id="downloadPdf">Download exact-size PDF</a><button id="markPrinted" type="button">Mark entire request printed</button><button id="cancelAdmin" class="secondary" type="button">Cancel request</button></div><p class="hint">For more than 20 items, print additional batches or set printer copies carefully. Mark printed only after completing the entire requested quantity.</p></div><button id="cancelOwn" type="button" class="secondary" hidden>Cancel request</button></section>
-<section id="history" class="panel"><h2>My requests</h2><div id="jobList"></div><div class="pager"><button id="previous" class="secondary">Previous</button><span id="pageInfo"></span><button id="next" class="secondary">Next</button></div></section></div></main><footer>Install this website on Android from your browser menu, or use Install app when available. An internet connection is required to submit and manage print requests.</footer>
-</body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#174f42" />
+    <title>Print requests — Print Studio</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="stylesheet" href="/orders.css" />
+    <script src="/print-options.js" defer></script>
+    <script src="/print-products.js" defer></script>
+    <script src="/orders.js" defer></script>
+    <script src="/pwa.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a href="/printing" class="brand">Print Studio</a>
+      <nav>
+        <a href="/">ID Card Studio</a><a href="/printing">Products</a
+        ><a href="/admin" id="adminLink" hidden>Admin dashboard</a
+        ><button id="installApp" hidden>Install app</button>
+      </nav>
+    </header>
+    <main>
+      <section id="loginPanel" class="panel" hidden>
+        <h1>Sign in to request printing</h1>
+        <p>Use your ID Card Studio account.</p>
+        <form id="login">
+          <label>Email<input name="email" type="email" autocomplete="username" required /></label
+          ><label
+            >Password<input
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required /></label
+          ><button id="loginButton">Sign in</button>
+        </form>
+        <p>New here? <a href="/">Create an account</a>, then return to this page.</p>
+      </section>
+      <p id="error" role="alert" hidden></p>
+      <p id="notice" role="status"></p>
+      <div id="content" hidden>
+        <div class="heading">
+          <div>
+            <p class="eyebrow">FROM DESIGN TO PRINT</p>
+            <h1 id="title">My print requests</h1>
+          </div>
+          <button id="newRequest" type="button">New request</button>
+        </div>
+        <section id="requestPanel" class="panel">
+          <h2 id="formTitle">Send artwork to the print shop</h2>
+          <p id="sourceHint">
+            Upload a JPG, PNG or WEBP image, up to 5 MB and 16 megapixels. The original resolution
+            is kept for printing.
+          </p>
+          <form id="jobForm">
+            <div class="grid">
+              <label
+                >Request title<input
+                  id="jobTitle"
+                  required
+                  maxlength="150"
+                  placeholder="e.g. Staff ID or event banner" /></label
+              ><label>Product<select id="product"></select></label
+              ><label id="artworkLabel" class="full"
+                >Artwork<input
+                  id="artwork"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp" /></label
+              ><label
+                >Requested quantity<input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  max="100000"
+                  value="1"
+                  required /></label
+              ><label>Size preset<select id="preset"></select></label>
+            </div>
+            <fieldset>
+              <legend>Print size</legend>
+              <div class="grid">
+                <label
+                  >Units<select id="unit">
+                    <option value="mm">Millimetres</option>
+                    <option value="cm">Centimetres</option>
+                    <option value="in">Inches</option>
+                  </select></label
+                ><label>Width<input id="width" type="number" step="any" min="0.1" required /></label
+                ><label
+                  >Height<input id="height" type="number" step="any" min="0.1" required /></label
+                ><label
+                  >Paper<select id="paper">
+                    <option value="match">Match item size / roll media</option>
+                    <option value="A4">A4</option>
+                    <option value="A3">A3</option>
+                    <option value="Letter">Letter</option>
+                  </select></label
+                ><label
+                  >Paper orientation<select id="orientation">
+                    <option value="portrait">Portrait</option>
+                    <option value="landscape">Landscape</option>
+                  </select></label
+                ><label
+                  >Margin (mm)<input
+                    id="margin"
+                    type="number"
+                    min="0"
+                    max="25"
+                    step="any"
+                    value="0" /></label
+                ><label
+                  >Artwork fit<select id="fit">
+                    <option value="contain">Fit inside — keep full design</option>
+                    <option value="cover">Fill area — crop edges</option>
+                  </select></label
+                ><label
+                  >Copies in this batch<input
+                    id="copies"
+                    type="number"
+                    min="1"
+                    max="20"
+                    value="1"
+                    required
+                /></label>
+              </div>
+              <p id="sizeSummary" class="hint"></p>
+            </fieldset>
+            <p class="hint">
+              One item per page. Match the paper size in the printer driver and use 100% / Actual
+              size. Mug and T-shirt dimensions describe the transfer artwork; use the right transfer
+              printer and finishing equipment. Large flex sizes need a suitable wide-format printer.
+            </p>
+            <button id="saveJob" type="submit">Submit print request</button
+            ><a href="#history" id="historyLink">View my requests</a>
+          </form>
+        </section>
+        <section id="jobPanel" class="panel" hidden>
+          <h2 id="jobHeading"></h2>
+          <p id="jobDetails"></p>
+          <p id="jobStatus"></p>
+          <div id="adminActions" hidden>
+            <p>
+              Prepare saves the size settings above. Then open the print document and choose an
+              installed printer. Closing the dialog does not confirm printing.
+            </p>
+            <div class="actions">
+              <a id="openPrint" target="_blank" rel="noopener">Open print document</a
+              ><a id="downloadPdf">Download exact-size PDF</a
+              ><button id="markPrinted" type="button">Mark entire request printed</button
+              ><button id="cancelAdmin" class="secondary" type="button">Cancel request</button>
+            </div>
+            <p class="hint">
+              For more than 20 items, print additional batches or set printer copies carefully. Mark
+              printed only after completing the entire requested quantity.
+            </p>
+          </div>
+          <button id="cancelOwn" type="button" class="secondary" hidden>Cancel request</button>
+        </section>
+        <section id="history" class="panel">
+          <h2>My requests</h2>
+          <div id="jobList"></div>
+          <div class="pager">
+            <button id="previous" class="secondary">Previous</button><span id="pageInfo"></span
+            ><button id="next" class="secondary">Next</button>
+          </div>
+        </section>
+      </div>
+    </main>
+    <footer>
+      Install this website on Android from your browser menu, or use Install app when available. An
+      internet connection is required to submit and manage print requests.
+    </footer>
+  </body>
+</html>
