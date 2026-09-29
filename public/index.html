@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>School ID Maker</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:#f4f7fb;color:#111827}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0}.hidden{display:none!important}
+.top{height:64px;background:#111827;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 28px}.brand{font-size:20px;font-weight:800}.wrap{max-width:1180px;margin:30px auto;padding:0 18px}.auth{max-width:440px;margin:8vh auto;background:#fff;padding:30px;border-radius:18px;box-shadow:0 12px 40px #0001}.tabs{display:flex;gap:8px;margin-bottom:20px}.tabs button{padding:10px 16px;border-radius:10px;background:#eef2f7}.tabs button.active{background:#111827;color:#fff}.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:22px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:22px;box-shadow:0 8px 28px #00000008}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:13px;font-weight:700;color:#4b5563}.field input,.field select,.field textarea{padding:11px 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff}.field textarea{min-height:78px;resize:vertical}.primary{background:#2563eb;color:#fff;padding:11px 16px;border-radius:10px;font-weight:700}.secondary{background:#eef2ff;color:#1e40af;padding:10px 14px;border-radius:10px;font-weight:700}.danger{background:#fee2e2;color:#991b1b;padding:8px 12px;border-radius:8px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.muted{color:#6b7280;font-size:13px}.section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.list{display:grid;gap:8px}.item{padding:12px;border:1px solid #e5e7eb;border-radius:10px;display:flex;justify-content:space-between;align-items:center}.color-row{display:flex;gap:14px;align-items:center}.color-row input{width:54px;height:42px;padding:3px}.preview-area{display:flex;justify-content:center;align-items:flex-start;padding:20px;background:#f1f5f9;border-radius:14px;min-height:520px}.idcard{width:330px;min-height:500px;border-radius:18px;overflow:hidden;position:relative;box-shadow:0 15px 40px #0002;background:#fff}.idbg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.18}.idcontent{position:relative;z-index:1;padding:24px;text-align:center}.school-img{width:84px;height:84px;object-fit:cover;border-radius:50%;border:4px solid #fff;box-shadow:0 4px 15px #0002}.student-img{width:120px;height:120px;object-fit:cover;border-radius:14px;margin:18px auto;border:5px solid #fff;box-shadow:0 5px 20px #0002;background:#e5e7eb}.idcontent h2{margin:8px 0 3px}.idcontent h3{margin:2px 0 18px}.meta{text-align:left;background:#fff9;padding:12px;border-radius:12px}.meta div{padding:4px 0}.org-banner{padding:12px 0;border-bottom:1px solid #ffffff88}.setup-note{padding:12px;background:#eff6ff;border-radius:10px;margin-bottom:16px;color:#1e40af}.toolbar{display:flex;gap:8px;margin-bottom:20px}.stat{display:flex;gap:12px}.statbox{padding:12px 16px;background:#f8fafc;border-radius:10px}.upload{border:2px dashed #cbd5e1;padding:18px;border-radius:12px;text-align:center}.toast{position:fixed;right:20px;bottom:20px;background:#111827;color:#fff;padding:12px 16px;border-radius:10px;display:none;z-index:99}@media(max-width:900px){.grid{grid-template-columns:1fr}.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+<div id="authView" class="auth">
+  <div class="brand" style="color:#111827;margin-bottom:8px">School ID Maker</div>
+  <p class="muted">Create professional ID cards for schools, colleges and individual users.</p>
+  <div class="tabs"><button id="loginTab" class="active">Login</button><button id="signupTab">Create account</button></div>
+  <form id="authForm">
+    <div id="nameField" class="field hidden"><label>Your name</label><input id="authName"></div>
+    <div class="field"><label>Email</label><input id="authEmail" type="email" required></div>
+    <div class="field" style="margin-top:12px"><label>Password</label><input id="authPassword" type="password" minlength="6" required></div>
+    <button class="primary" style="width:100%;margin-top:18px" id="authSubmit">Login</button>
+  </form>
+</div>
+
+<div id="appView" class="hidden">
+<header class="top"><div class="brand">School ID Maker</div><div class="row"><span id="hello"></span><button class="secondary" onclick="logout()">Logout</button></div></header>
+<main class="wrap">
+<div id="setupView" class="card hidden">
+  <h2>Set up your organization</h2><div class="setup-note">Before creating ID cards, tell us whether you are a school, college or individual user and configure your card branding.</div>
+  <form id="orgForm"><div class="formgrid">
+    <div class="field"><label>Account type</label><select id="orgType"><option value="school">School</option><option value="college">College</option><option value="individual">Individual</option></select></div>
+    <div class="field"><label>Name</label><input id="orgName" required placeholder="ABC Public School"></div>
+    <div class="field"><label>Tagline</label><input id="orgTagline" placeholder="Learn. Lead. Belong."></div>
+    <div class="field"><label>Academic year</label><input id="orgYear" placeholder="2026-27"></div>
+    <div class="field"><label>Phone</label><input id="orgPhone"></div>
+    <div class="field full"><label>Address</label><textarea id="orgAddress"></textarea></div>
+    <div class="field"><label>Default background color</label><div class="color-row"><input id="bgColor" type="color" value="#ffffff"><span id="bgText">#ffffff</span></div></div>
+    <div class="field"><label>ID-card text color</label><div class="color-row"><input id="textColor" type="color" value="#111827"><span id="textText">#111827</span></div></div>
+    <div class="field full"><label>School / college / organization image</label><div class="upload"><input id="orgImage" type="file" accept="image/png,image/jpeg,image/webp"><div class="muted">This image is used as the ID-card background.</div></div></div>
+  </div><button class="primary" style="margin-top:18px">Save setup & continue</button></form>
+</div>
+
+<div id="dashboard" class="hidden">
+  <div class="toolbar"><button class="primary" onclick="showSetup()">Organization settings</button><button class="secondary" onclick="refresh()">Refresh</button></div>
+  <div class="grid">
+    <div>
+      <div class="card"><div class="section-title"><h2>Classes</h2><button class="secondary" onclick="addClass()">+ Class</button></div><div id="classList" class="list"></div></div>
+      <div class="card" style="margin-top:18px"><div class="section-title"><h2>Students</h2></div><div id="studentPanel" class="muted">Select a class and section to manage students.</div></div>
+    </div>
+    <div class="card"><div class="section-title"><h2>ID-card preview</h2><button class="secondary" onclick="window.print()">Print</button></div><div class="preview-area"><div id="card" class="idcard"></div></div></div>
+  </div>
+</div>
+</main></div>
+
+<script>
+let mode="login", me=null, org=null, currentSection=null, currentStudents=[];
+const $=id=>document.getElementById(id);
+function toast(m){$("toast").textContent=m;$("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",2600)}
+async function api(url,opt={}){const r=await fetch(url,{credentials:"include",...opt});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.message||"Request failed");return d}
+$("loginTab").onclick=()=>setMode("login");$("signupTab").onclick=()=>setMode("signup");
+function setMode(m){mode=m;$("loginTab").classList.toggle("active",m==="login");$("signupTab").classList.toggle("active",m==="signup");$("nameField").classList.toggle("hidden",m!=="signup");$("authSubmit").textContent=m==="signup"?"Create account":"Login"}
+$("authForm").onsubmit=async e=>{e.preventDefault();try{const d=await api("/api/auth/"+(mode==="signup"?"signup":"login"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:$("authName").value,email:$("authEmail").value,password:$("authPassword").value})});me=d.user;await enter()}catch(e){toast(e.message)}}
+async function enter(){ $("authView").classList.add("hidden");$("appView").classList.remove("hidden");$("hello").textContent="Hi, "+me.name;await loadOrg(); }
+async function loadOrg(){const d=await api("/api/organization");org=d.organization;if(!org){$("setupView").classList.remove("hidden");$("dashboard").classList.add("hidden");return}$("setupView").classList.add("hidden");$("dashboard").classList.remove("hidden");await refresh();}
+function fillOrg(){if(!org)return;$("orgType").value=org.organization_type;$("orgName").value=org.name;$("orgTagline").value=org.tagline;$("orgYear").value=org.academic_year;$("orgPhone").value=org.phone;$("orgAddress").value=org.address;$("bgColor").value=org.background_color||"#ffffff";$("textColor").value=org.text_color||"#111827";syncColors()}
+function showSetup(){$("setupView").classList.remove("hidden");$("dashboard").classList.add("hidden");fillOrg()}
+$("bgColor").oninput=syncColors;$("textColor").oninput=syncColors;
+function syncColors(){$("bgText").textContent=$("bgColor").value;$("textText").textContent=$("textColor").value}
+$("orgForm").onsubmit=async e=>{e.preventDefault();try{let imageUrl=org?.image_url||null;const f=$("orgImage").files[0];if(f){const fd=new FormData();fd.append("image",f);const u=await api("/api/uploads",{method:"POST",body:fd});imageUrl=u.url}const d=await api("/api/organization",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({organizationType:$("orgType").value,name:$("orgName").value,tagline:$("orgTagline").value,address:$("orgAddress").value,phone:$("orgPhone").value,academicYear:$("orgYear").value,imageUrl,backgroundColor:$("bgColor").value,textColor:$("textColor").value})});org=d.organization;toast("Organization settings saved");await loadOrg()}catch(e){toast(e.message)}}
+async function refresh(){const d=await api("/api/classes");renderClasses(d.classes)}
+async function addClass(){const name=prompt("Class name (e.g. Class 10)");if(!name)return;try{await api("/api/classes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});refresh()}catch(e){toast(e.message)}}
+async function renderClasses(classes){$("classList").innerHTML=classes.length?classes.map(c=>`<div class="item"><div><b>${esc(c.name)}</b><div class="muted">${c.section_count} sections · ${c.student_count} students</div></div><button class="secondary" onclick="openClass('${c.id}','${esc(c.name)}')">Open</button></div>`).join(""):`<div class="muted">No classes yet. Add your first class.</div>`}
+async function openClass(id,name){const d=await api("/api/classes/"+id+"/sections");$("studentPanel").innerHTML=`<div class="section-title"><h3>${esc(name)} — Sections</h3><button class="secondary" onclick="addSection('${id}')">+ Section</button></div><div id="sections" class="list">${d.sections.map(s=>`<div class="item"><span><b>${esc(s.name)}</b><small class="muted"> · ${s.student_count} students</small></span><button class="secondary" onclick="openSection('${s.id}','${esc(name)}','${esc(s.name)}')">Students</button></div>`).join("")||'<div class="muted">No sections yet.</div>'}</div>`}
+async function addSection(id){const name=prompt("Section name (e.g. A)");if(!name)return;try{await api("/api/classes/"+id+"/sections",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});const d=await api("/api/classes/"+id+"/sections");$("studentPanel").querySelector("#sections").innerHTML=d.sections.map(s=>`<div class="item"><span><b>${esc(s.name)}</b></span><button class="secondary" onclick="openSection('${s.id}','', '${esc(s.name)}')">Students</button></div>`).join("")}catch(e){toast(e.message)}}
+async function openSection(id,cls,sec){currentSection=id;const d=await api("/api/sections/"+id+"/students");currentStudents=d.students;$("studentPanel").innerHTML=`<div class="section-title"><h3>${esc(cls)} ${esc(sec)}</h3><button class="secondary" onclick="addStudent()">+ Student</button></div><div class="list">${currentStudents.map((s,i)=>`<div class="item"><div><b>${esc(s.name)}</b><div class="muted">${esc(s.student_id)} · ${esc(s.blood_group||"")}</div></div><button class="primary" onclick="previewStudent(${i})">Preview</button></div>`).join("")||'<div class="muted">No students yet.</div>'}</div>`}
+async function addStudent(){const name=prompt("Student name");if(!name)return;const studentId=prompt("Student ID / Roll number");if(!studentId)return;try{await api("/api/sections/"+currentSection+"/students",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,studentId})});openSection(currentSection,"","")}catch(e){toast(e.message)}}
+function previewStudent(i){const s=currentStudents[i];const bg=org.background_color||"#fff",tc=org.text_color||"#111827";$("card").style.color=tc;$("card").style.background=bg;$("card").innerHTML=`<div class="idbg" style="background-color:${bg};${org.image_url?`background-image:url('${org.image_url}')`:''}"></div><div class="idcontent"><div class="org-banner">${org.image_url?`<img class="school-img" src="${org.image_url}">`:''}<h2>${esc(org.name)}</h2><div>${esc(org.tagline||"")}</div></div><div style="padding-top:12px"><div class="student-img">${s.photo_url?`<img src="${s.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`:""}</div><h2>${esc(s.name)}</h2><h3>${esc(s.student_id)}</h3><div class="meta"><div><b>Blood Group:</b> ${esc(s.blood_group||"—")}</div><div><b>DOB:</b> ${esc(s.date_of_birth||"—")}</div><div><b>Phone:</b> ${esc(s.phone||"—")}</div><div><b>Address:</b> ${esc(s.address||"—")}</div></div></div></div>`}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+async function logout(){await api("/api/auth/logout",{method:"POST"});location.reload()}
+(async()=>{try{const d=await api("/api/auth/me");me=d.user;await enter()}catch{}})();
+</script>
+</body></html>

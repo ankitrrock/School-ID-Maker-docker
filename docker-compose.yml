@@ -1,54 +1,32 @@
 services:
   db:
     image: postgres:16-alpine
-    restart: unless-stopped
     environment:
       POSTGRES_DB: school_id_maker
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
-      - db-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d school_id_maker"]
+      test: ["CMD-SHELL","pg_isready -U postgres -d school_id_maker"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
 
-  api:
-    build:
-      context: .
-      dockerfile: artifacts/api-server/Dockerfile
-    restart: unless-stopped
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/school_id_maker
+      JWT_SECRET: change-this-in-production
+      PORT: 3000
+    volumes:
+      - uploads:/app/data/uploads
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      PORT: 3001
-      NODE_ENV: production
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/school_id_maker
-      JWT_SECRET: ${JWT_SECRET}
-      FRONTEND_URL: http://localhost:8080
-      APP_URL: http://localhost:8080
-    ports:
-      - "3001:3001"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/api/healthz || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  web:
-    build:
-      context: .
-      dockerfile: artifacts/mockup-sandbox/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_healthy
-    ports:
-      - "8080:80"
 
 volumes:
-  db-data:
+  postgres_data:
+  uploads:

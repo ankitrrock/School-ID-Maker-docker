@@ -1,6 +1,3 @@
-**/node_modules
-**/dist
-**/.expo
-**/.tsbuildinfo
+node_modules
 .git
-*.log
+data/*.db
