@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: school-id-maker
+    runtime: docker
+    plan: free
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: id-card-assets
+      - key: FREE_STUDENT_LIMIT
+        value: "50"
+      - key: FREE_CARD_LIMIT
+        value: "50"
+      - key: PRO_STUDENT_LIMIT
+        value: "5000"
+      - key: PRO_CARD_LIMIT
+        value: "5000"
