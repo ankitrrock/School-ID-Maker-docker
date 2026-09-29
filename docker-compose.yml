@@ -29,6 +29,7 @@ services:
       DATABASE_URL: postgres://postgres:postgres@db:5432/school_id_maker
       JWT_SECRET: ${JWT_SECRET:-}
       NODE_ENV: ${NODE_ENV:-development}
+      PRINT_SHOP_NAME: ${PRINT_SHOP_NAME:-Print Studio}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       SUPABASE_URL: ${SUPABASE_URL:-}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}

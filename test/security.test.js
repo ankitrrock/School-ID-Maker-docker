@@ -51,6 +51,7 @@ test('frontend parses and escapes attacker-controlled image attributes and stude
   const nodes = new Map();
   const document = { getElementById(id) { if (!nodes.has(id)) nodes.set(id, { classList: { toggle() {}, add() {}, remove() {} }, addEventListener() {}, value: '' }); return nodes.get(id); }, addEventListener() {} };
   const context = vm.createContext({ document, URL, fetch: async () => { throw new Error('No session'); }, setTimeout, clearTimeout, console });
+  vm.runInContext(readFileSync('public/card-design.js', 'utf8'), context);
   vm.runInContext(readFileSync('public/app.js', 'utf8'), context);
   const payload = 'https://example.test/x" onerror="alert(1)';
   const html = vm.runInContext(`cardHTML(${JSON.stringify({ name: '<school>', image_url: payload, background_color: '" onclick="bad', text_color: '#123456' })}, ${JSON.stringify({ name: '<img src=x onerror=bad>', photo_url: payload, student_id: 'A1' })})`, context);

@@ -7,6 +7,7 @@ const path = require("path");
 const { rateLimit } = require("express-rate-limit");
 const { Pool } = require("pg");
 const { registerProductRoutes, insertStudent } = require("./product");
+const { registerPrintRoutes, initPrintDb } = require("./printing");
 const { createStorage } = require("./storage");
 const { problem, requireLimit, withOrganization } = require("./limits");
 
@@ -67,6 +68,8 @@ async function initDb(pool) {
   await pool.query("alter table organizations add column if not exists plan text not null default 'free', add column if not exists subscription_status text not null default 'inactive', add column if not exists template_id text not null default 'classic'");
   await pool.query("create table if not exists usage_counters (organization_id uuid primary key references organizations(id) on delete cascade, students_count integer not null default 0, cards_generated integer not null default 0, updated_at timestamptz not null default now())");
   await pool.query("create table if not exists payment_requests (id uuid primary key default gen_random_uuid(), organization_id uuid not null references organizations(id) on delete cascade, user_id uuid not null references users(id) on delete cascade, plan_code text not null, amount numeric(12,2) not null default 0, status text not null default 'pending', note text not null default '', approved_at timestamptz, approved_by uuid references users(id), created_at timestamptz not null default now())");
+  await pool.query("alter table organizations add column if not exists card_design jsonb not null default '{}'::jsonb");
+  await initPrintDb(pool);
   if(process.env.ADMIN_EMAIL) await pool.query("update users set role='admin' where email=$1",[process.env.ADMIN_EMAIL.toLowerCase()]);
 }
 
@@ -124,6 +127,7 @@ app.post("/api/auth/login", async (req,res)=>{
 app.post("/api/auth/logout",(req,res)=>{res.clearCookie("sid",cookie);res.json({ok:true});});
 app.get("/api/auth/me",auth,async(req,res)=>res.json({user:req.user}));
 registerProductRoutes(app,pool,auth,upload,storage);
+registerPrintRoutes(app,pool,auth);
 
 app.get("/api/organization",auth,async(req,res)=>{
   const r=await pool.query("select * from organizations where user_id=$1",[req.user.id]);

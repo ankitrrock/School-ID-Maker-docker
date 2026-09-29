@@ -1,5 +1,6 @@
 const ExcelJS = require('exceljs');
 const { PLANS, TEMPLATES, problem, planOf, orgFor, usage, requireLimit, withOrganization } = require('./limits');
+const CardDesign = require('../public/card-design');
 const { qr, barcode, pdfCards } = require('./cards');
 
 async function excelRows(buffer) {
@@ -50,9 +51,19 @@ function registerProductRoutes(app, pool, auth, upload, storage) {
   });
   app.put('/api/templates', auth, async (req, res) => {
     const org = await withOrganization(pool, req.user.id, async (db, org) => {
-      if (!TEMPLATES.slice(0, planOf(org).templates).some(template => template.id === req.body.templateId)) throw problem(403, 'Template is not available on your plan.');
+      if (!TEMPLATES.slice(0, planOf(org).templates).some(template => template.id === req.body.templateId)) throw problem(400, 'Choose one of the five card designs.');
       return (await db.query('update organizations set template_id=$2 where id=$1 returning *', [org.id, req.body.templateId])).rows[0];
     });
+    res.json({ organization: { ...org, image_url: storage.stableUrl(org.image_url) } });
+  });
+  app.put('/api/card-design', auth, async (req, res) => {
+    let design;
+    try { design = CardDesign.validate(req.body?.cardDesign); } catch (error) { throw problem(400, error.message); }
+    if (!TEMPLATES.some(template => template.id === req.body.templateId)) throw problem(400, 'Choose a valid card design.');
+    if (![req.body.backgroundColor, req.body.textColor].every(value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value))) throw problem(400, 'Choose valid background and text colors.');
+    const org = await withOrganization(pool, req.user.id, async (db, org) => (await db.query(
+      'update organizations set template_id=$2,card_design=$3,background_color=$4,text_color=$5,updated_at=now() where id=$1 returning *',
+      [org.id, req.body.templateId, JSON.stringify(design), req.body.backgroundColor, req.body.textColor])).rows[0]);
     res.json({ organization: { ...org, image_url: storage.stableUrl(org.image_url) } });
   });
   app.post(['/api/uploads', '/api/assets/upload'], auth, upload.single('image'), async (req, res) => {
