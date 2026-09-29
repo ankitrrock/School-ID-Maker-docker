@@ -53,11 +53,15 @@ async function initAdminDb(pool) {
       elsif TG_TABLE_NAME='print_enquiries' then
         if TG_OP='INSERT' then event_name := 'enquiry.created';
         elsif NEW.status is distinct from OLD.status then event_name := 'enquiry.' || NEW.status; owner_id := NEW.updated_by; end if;
+      elsif TG_TABLE_NAME='print_jobs' then
+        owner_id := coalesce(NEW.updated_by,NEW.user_id);
+        if TG_OP='INSERT' then event_name := 'print.requested';
+        elsif NEW.status is distinct from OLD.status or NEW.layout is distinct from OLD.layout then event_name := 'print.' || NEW.status; end if;
       elsif TG_TABLE_NAME='asset_uploads' then
         owner_id := NEW.user_id; event_name := 'image.uploaded';
       end if;
       if org_id is not null and owner_id is null then select user_id into owner_id from organizations where id=org_id; end if;
-      if org_id is null and owner_id is not null and TG_TABLE_NAME<>'print_enquiries' then select id into org_id from organizations where user_id=owner_id; end if;
+      if org_id is null and owner_id is not null and TG_TABLE_NAME not in ('print_enquiries','print_jobs') then select id into org_id from organizations where user_id=owner_id; end if;
       if event_name is not null then
         insert into activity_events(account_id,organization_id,action,entity_id,quantity) values(owner_id,org_id,event_name,target_id,amount);
       end if;
@@ -65,7 +69,7 @@ async function initAdminDb(pool) {
     end $$;
   `);
   // Triggers run in the same transaction as the action, so rolled-back work is not logged.
-  const tables = { users: 'insert or update', organizations: 'insert or update', classes: 'insert', sections: 'insert', students: 'insert or update or delete', usage_counters: 'update', payment_requests: 'insert or update', print_enquiries: 'insert or update', asset_uploads: 'insert' };
+  const tables = { users: 'insert or update', organizations: 'insert or update', classes: 'insert', sections: 'insert', students: 'insert or update or delete', usage_counters: 'update', payment_requests: 'insert or update', print_enquiries: 'insert or update', asset_uploads: 'insert', print_jobs: 'insert or update' };
   for (const [table, events] of Object.entries(tables)) {
     await pool.query(`create or replace trigger platform_activity after ${events} on ${table} for each row execute function track_platform_activity()`);
   }
@@ -103,6 +107,7 @@ function registerAdminRoutes(app, pool, auth) {
       (select count(*)::int from print_enquiries) enquiries,
       (select count(*)::int from print_enquiries where status<>'closed') "openEnquiries",
       (select count(*)::int from asset_uploads) uploads,
+      (select count(*)::int from print_jobs where status in ('requested','ready')) "openPrintJobs",
       (select started_at from admin_tracking where id=1) "trackingStartedAt"`);
     const trends = await pool.query(`select to_char(bucket,'YYYY-MM-DD') as "day",
       count(e.id)::int actions, coalesce(sum(case when e.action='cards.generated' then e.quantity else 0 end),0)::int cards
@@ -124,7 +129,7 @@ function registerAdminRoutes(app, pool, auth) {
     "($1='' or strpos(lower(o.name||' '||u.email),lower($1))>0) and ($2='' or o.plan=$2)", 'o.created_at desc,o.id desc', 'organizations', ['free', 'pro'])));
   app.get('/api/admin/students', async (req, res) => res.json(await list(pool, req.query,
     'from students st join sections s on s.id=st.section_id join classes c on c.id=s.class_id join organizations o on o.id=c.organization_id',
-    'st.id,st.student_id,st.name,st.created_at,st.photo_url is not null has_photo,s.name section_name,c.name class_name,o.name organization_name',
+    `st.id,st.student_id,st.name,st.created_at,st.photo_url is not null has_photo,o.card_design->>'orientation' orientation,s.name section_name,c.name class_name,o.name organization_name`,
     "($1='' or strpos(lower(st.name||' '||st.student_id||' '||o.name),lower($1))>0) and $2=''", 'st.created_at desc,st.id desc', 'students')));
   app.get('/api/admin/payment-requests', async (req, res) => res.json(await list(pool, req.query,
     'from payment_requests p join organizations o on o.id=p.organization_id join users u on u.id=p.user_id left join users a on a.id=p.approved_by',
@@ -134,9 +139,14 @@ function registerAdminRoutes(app, pool, auth) {
     'from asset_uploads a left join users u on u.id=a.user_id left join organizations o on o.user_id=a.user_id',
     'a.id,a.media_type,a.size_bytes,a.created_at,u.name,u.email,o.name organization_name',
     "($1='' or strpos(lower(coalesce(u.email,'')||' '||coalesce(o.name,'')),lower($1))>0) and $2=''", 'a.created_at desc,a.id desc', 'uploads')));
+  app.get('/api/admin/print-jobs', async (req,res) => res.json(await list(pool,req.query,
+    'from print_jobs j join users u on u.id=j.user_id',
+    'j.id,j.title,j.kind,j.product_id,j.quantity,j.layout,j.status,j.created_at,u.name,u.email',
+    "($1='' or strpos(lower(j.title||' '||u.email),lower($1))>0) and ($2='' or j.status=$2)",
+    'j.created_at desc,j.id desc','jobs',['requested','ready','printed','cancelled'])));
   app.get('/api/admin/activity', async (req, res) => res.json(await list(pool, req.query,
     'from activity_events e left join users u on u.id=e.account_id left join organizations o on o.id=e.organization_id',
     'e.id,e.action,e.entity_id,e.quantity,e.created_at,u.name,u.email,o.name organization_name',
-    "($1='' or strpos(lower(e.action||' '||coalesce(u.email,'')||' '||coalesce(o.name,'')),lower($1))>0) and ($2='' or split_part(e.action,'.',1)=$2)", 'e.created_at desc,e.id desc', 'events', ['account', 'organization', 'class', 'section', 'student', 'design', 'cards', 'payment', 'plan', 'enquiry', 'image'])));
+    "($1='' or strpos(lower(e.action||' '||coalesce(u.email,'')||' '||coalesce(o.name,'')),lower($1))>0) and ($2='' or split_part(e.action,'.',1)=$2)", 'e.created_at desc,e.id desc', 'events', ['account', 'organization', 'class', 'section', 'student', 'design', 'cards', 'payment', 'plan', 'enquiry', 'image', 'print'])));
 }
 module.exports = { initAdminDb, registerAdminRoutes, filters };

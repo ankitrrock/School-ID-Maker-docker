@@ -221,6 +221,45 @@ test('current application workflows against PostgreSQL', async t => {
       await pool.query("update users set role='user' where id=$1", [bob.user.id]);
       await request('/api/admin/overview', 'GET', undefined, bob.cookie, 403);
     });
+    await t.test('print requests enforce ownership, exact-size preparation and explicit completion', async () => {
+      await pool.query("update users set role='admin' where id=$1", [bob.user.id]);
+      const settings = {widthMm:127,heightMm:177.8,paper:'match',copies:2};
+      const body = {title:'Invitation',productId:'wedding',quantity:10,artworkUrl:asset.url,layout:settings};
+      await request('/api/print-jobs','POST',body,undefined,401);
+      await request('/api/print-jobs','POST',body,bob.cookie,404);
+      await request('/api/print-jobs','POST',{...body,artworkUrl:'https://example.test/file.png'},alice.cookie,400);
+      const id = (await request('/api/print-jobs','POST',body,alice.cookie,201)).data.id;
+      const customer = await account('print-customer@example.test');
+      await request('/api/print-jobs/'+id,'GET',undefined,customer.cookie,404);
+      assert.equal((await request('/api/print-jobs','GET',undefined,customer.cookie)).data.total,0);
+      for(const route of ['/api/admin/print-jobs','/api/admin/print-jobs/'+id+'/pdf','/api/admin/print-jobs/'+id+'/document','/api/admin/print-jobs/'+id+'/image/artwork'])await request(route,'GET',undefined,alice.cookie,403);
+      await request('/api/admin/print-jobs/'+id,'PATCH',{status:'printed'},alice.cookie,403);
+      await request('/api/admin/print-jobs/'+id,'PATCH',{status:'printed'},bob.cookie,409);
+      await request('/api/admin/print-jobs/'+id+'/document','GET',undefined,bob.cookie,409);
+      await request('/api/admin/print-jobs/'+id,'PATCH',{status:'ready',layout:{...settings,widthMm:900,paper:'A4'}},bob.cookie,400);
+      await request('/api/admin/print-jobs/'+id,'PATCH',{status:'ready',layout:settings},bob.cookie);
+      const document = await request('/api/admin/print-jobs/'+id+'/document','GET',undefined,bob.cookie);
+      assert.match(await document.response.text(),/size:127mm 177.8mm/);
+      const pdf = await request('/api/admin/print-jobs/'+id+'/pdf','GET',undefined,bob.cookie);
+      assert.equal(Buffer.from(await pdf.response.arrayBuffer()).subarray(0,5).toString(),'%PDF-');
+      // Opening/downloading a document must never claim a physical print completed.
+      assert.equal((await request('/api/print-jobs/'+id,'GET',undefined,alice.cookie)).data.job.status,'ready');
+      await request('/api/admin/print-jobs/'+id,'PATCH',{status:'printed'},bob.cookie);
+      await request('/api/admin/print-jobs/'+id,'PATCH',{status:'ready',layout:settings},bob.cookie,409);
+      const cancelId=(await request('/api/print-jobs','POST',body,alice.cookie,201)).data.id;
+      await request('/api/print-jobs/'+cancelId+'/cancel','POST',undefined,alice.cookie);
+      await request('/api/admin/print-jobs/'+cancelId+'/pdf','GET',undefined,bob.cookie,409);
+      const ownStudent=(await request('/api/sections/'+alice.section.id+'/students','GET',undefined,alice.cookie)).data.students[0];
+      const cardBody={title:'ID print',productId:'idcards',quantity:2,studentId:ownStudent.id,layout:{widthMm:86,heightMm:54}};
+      await request('/api/print-jobs','POST',cardBody,customer.cookie,404);
+      const cardId=(await request('/api/print-jobs','POST',cardBody,bob.cookie,201)).data.id;
+      assert.equal((await request('/api/print-jobs/'+cardId,'GET',undefined,alice.cookie)).data.job.user_id,alice.user.id);
+      await request('/api/templates','PUT',{templateId:'classic'},alice.cookie);
+      const stored=(await pool.query('select source from print_jobs where id=$1',[cardId])).rows[0];assert.equal(stored.source.org.template_id,'event');
+      await request('/api/admin/print-jobs/'+cardId,'PATCH',{status:'ready',layout:cardBody.layout},bob.cookie);
+      assert.equal((await request('/api/admin/print-jobs?status=printed&q=Invitation','GET',undefined,bob.cookie)).data.total,1);
+      assert.ok((await request('/api/admin/activity?status=print','GET',undefined,bob.cookie)).data.total>=5);
+    });
     await t.test('health and API error responses are JSON', async () => {
       assert.deepEqual((await request('/api/healthz')).data, { status: 'ok' });
       await request('/api/missing', 'GET', undefined, alice.cookie, 404);

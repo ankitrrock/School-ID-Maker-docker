@@ -9,6 +9,7 @@ const { Pool } = require("pg");
 const { registerProductRoutes, insertStudent } = require("./product");
 const { registerPrintRoutes, initPrintDb } = require("./printing");
 const { initAdminDb, registerAdminRoutes } = require("./admin");
+const { initPrintJobs, registerPrintJobs } = require("./print-jobs");
 const { createStorage } = require("./storage");
 const { problem, requireLimit, withOrganization } = require("./limits");
 
@@ -79,6 +80,7 @@ async function initDb(pool) {
     end if;
   end $$`);
   await initPrintDb(pool);
+  await initPrintJobs(pool);
   await initAdminDb(pool);
   if(process.env.ADMIN_EMAIL) await pool.query("update users set role='admin' where email=$1",[process.env.ADMIN_EMAIL.toLowerCase()]);
 }
@@ -140,6 +142,7 @@ app.post("/api/auth/logout",(req,res)=>{res.clearCookie("sid",cookie);res.json({
 app.get("/api/auth/me",auth,async(req,res)=>res.json({user:req.user}));
 registerProductRoutes(app,pool,auth,upload,storage);
 registerPrintRoutes(app,pool,auth);
+registerPrintJobs(app,pool,auth,upload,storage);
 
 app.get("/api/organization",auth,async(req,res)=>{
   const r=await pool.query("select * from organizations where user_id=$1",[req.user.id]);

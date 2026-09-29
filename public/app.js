@@ -129,6 +129,7 @@ const A={
   addstu:studentForm,
   prev:d=>{sel=d.id;stuList();prev()},
   del:d=>{const s=students.find(x=>x.id===d.id);modal("Delete student",`<p>Delete <b>${esc(s.name)}</b> (${esc(s.student_id)})? This can't be undone.</p>`,"Delete",async()=>{await api("/api/students/"+d.id,{method:"DELETE"});if(sel===d.id)sel=null;students=students.filter(x=>x.id!==d.id);await afterChange();prev();toast("Student deleted")},true)},
+  requestprint:()=>{if(!sel)return toast("Select a student first.",true);location.assign("/orders?student="+encodeURIComponent(sel)+"&orientation="+(org?.card_design?.orientation||"portrait"));},
   printone:()=>{const s=students.find(x=>x.id===sel);if(s)return printCards([s])},
   printall:()=>printCards(students),
   close:closeModal

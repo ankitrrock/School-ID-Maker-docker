@@ -101,3 +101,35 @@ it is not a live storage inventory. Approved payment totals describe manual appr
 not independently verified bank transactions. All admin data APIs require an admin
 role read from the database on each request; credentials and signing secrets are
 never included in reports.
+
+## Customer app and print requests
+
+Customers can use the website on desktop/mobile or install it from Android Chrome's
+menu (or **Install app**, when offered). Serve the deployment over HTTPS. This is
+an installable web app, not a native APK or Play Store release. `/orders` provides
+print requests and status tracking; no private account data or artwork is cached
+offline. Administrators use `/admin` in their desktop browser.
+
+- Upload JPG/PNG/WEBP artwork (up to 5 MB, 16 megapixels), choose a product, quantity
+  and dimensions, then submit. Print artwork preserves its original resolution.
+- From a selected ID card, choose **Request shop printing**. The request saves the
+  current design/student data and consumes one card generation from the owner's
+  quota. Later design edits do not change the submitted request.
+- Admins open **Print jobs → Prepare / print**, choose preset/custom width and
+  height in mm/cm/inches, paper (matching item/A4/A3/Letter), orientation, margins,
+  fit/crop and 1–20 copies per batch. One item is placed on each page.
+- **Open print document** opens a printable page. **Choose printer & print** opens
+  the browser's print dialog. Select an installed USB/network printer and set
+  **Actual size / 100%**, the matching paper, no headers/footers, and one printer
+  copy (the document already contains the chosen batch copies).
+- **Download exact-size PDF** is available for external printer/RIP software.
+  Large flex boards require a suitable wide-format device/media. Mug and T-shirt
+  sizes refer to transfer artwork; finishing requires the appropriate equipment.
+- The app does not detect printer connections, silently send jobs, or confirm
+  physical output. Set the requested custom paper in the printer driver when
+  necessary. After checking the entire requested quantity, the admin explicitly
+  marks the request printed. Closing or cancelling a print dialog never does so.
+
+Browser printing uses [window.print](https://developer.mozilla.org/en-US/docs/Web/API/Window/print).
+Printer-specific automatic dispatch needs a separately configured local print
+agent or supported printer API; no hardware credentials are stored by this app.

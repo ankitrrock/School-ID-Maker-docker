@@ -72,12 +72,12 @@ small{color:var(--mut)}.on small{color:#fff9}
 <style id="sellable-ui">
 @media(max-width:760px){.top{padding:10px 12px;gap:8px}.top .nav{order:3;width:100%;overflow:auto}.top .nav button{white-space:nowrap}.wrap{padding:12px 10px 80px}.dash{grid-template-columns:1fr}.setup{grid-template-columns:1fr}.panel{padding:14px}.g2{grid-template-columns:1fr}.types{grid-template-columns:1fr}.colors{grid-template-columns:1fr}.sticky{position:static}.idcard{max-width:100%}.mobile-stack{flex-direction:column;align-items:stretch}.mobile-stack .btn{width:100%}.search{font-size:16px}}
 .product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.product-box{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.product-box b{display:block;margin-bottom:4px}.badge{display:inline-block;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;background:var(--tint);color:var(--pri)}.probox{border:1px solid #9cc0df;background:#f6fbff}.admin-table{width:100%;border-collapse:collapse}.admin-table th,.admin-table td{padding:9px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}.scroll-x{overflow:auto}@media(max-width:760px){.product-grid{grid-template-columns:1fr}.admin-table{min-width:650px}}
-</style><link rel="stylesheet" href="/designer.css"></head>
+</style><link rel="stylesheet" href="/designer.css"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#174f42"><script src="/pwa.js" defer></script><style>@media(display-mode:standalone){.web-admin-link{display:none!important}}</style></head>
 <body>
 <div id="toast" class="toast" role="status"></div>
 
 <div id="authView" class="auth"><div class="panel">
-  <div class="brand">School ID Maker</div><a class="shop-link" href="/printing">Explore printing services →</a> <a class="shop-link" href="/admin">Admin sign in</a>
+  <div class="brand">School ID Maker</div><a class="shop-link" href="/printing">Explore printing services →</a> <a class="shop-link web-admin-link" href="/admin">Admin sign in</a>
   <p class="mut" style="margin:6px 0 0">Make print-ready ID cards for your school, college or team.</p>
   <div class="tabs"><button id="loginTab" class="on" type="button">Log in</button><button id="signupTab" type="button">Create account</button></div>
   <form id="authForm">
@@ -91,8 +91,8 @@ small{color:var(--mut)}.on small{color:#fff9}
 
 <div id="appView" class="hidden">
 <header class="top"><div class="brand">School ID Maker</div>
-  <nav class="nav" id="nav"><button data-a="nav" data-v="dash" id="navDash">Students and cards</button><button data-a="nav" data-v="design">Customize ID card</button><button data-a="nav" data-v="setup" id="navSetup">Organization settings</button><button data-a="nav" data-v="admin" id="navAdmin" class="hidden">Admin</button></nav>
-  <a class="shop-link" href="/printing">Printing services</a><div class="row"><span id="hello"></span><button class="btn sm" id="logoutBtn">Log out</button></div>
+  <nav class="nav" id="nav"><button data-a="nav" data-v="dash" id="navDash">Students and cards</button><button data-a="nav" data-v="design">Customize ID card</button><button data-a="nav" data-v="setup" id="navSetup">Organization settings</button><button data-a="nav" data-v="admin" id="navAdmin" class="hidden web-admin-link">Admin</button></nav>
+  <a class="shop-link" href="/orders">My print requests</a><a class="shop-link" href="/printing">Printing services</a><div class="row"><span id="hello"></span><button class="btn sm" id="logoutBtn">Log out</button></div>
 </header>
 <main class="wrap"><section id="adminView" class="panel hidden">
 <div class="sect"><div><h2>Platform admin</h2><div class="mut">Manage plan activation and printing enquiries.</div></div><button class="btn" data-a="adminRefresh">Refresh</button></div>
@@ -166,7 +166,7 @@ small{color:var(--mut)}.on small{color:#fff9}
 </section><div id="dashView" class="dash hidden">
   <aside class="panel side"><div class="head"><h2>Classes</h2><button class="btn sm primary" data-a="addclass">+ Class</button></div><div id="classList"></div></aside>
   <section class="panel" id="stuPanel"></section>
-  <aside class="panel sticky"><h2>ID card preview</h2><div class="stage"><div id="card"></div></div><div class="row"><button class="btn primary" id="printOne" data-a="printone" disabled>Print this card</button></div></aside>
+  <aside class="panel sticky"><h2>ID card preview</h2><div class="stage"><div id="card"></div></div><div class="row"><button class="btn" data-a="requestprint">Request shop printing</button><button class="btn primary" id="printOne" data-a="printone" disabled>Print this card</button></div></aside>
 </div>
 </main></div>
 

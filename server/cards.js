@@ -26,6 +26,14 @@ async function pdfCards(students, org, db, userId, storage) {
         if (index) doc.addPage();
         const millimeters = scene.design.orientation === 'landscape' ? 86 : 54;
         doc.save().translate(24, 24).scale(millimeters * 72 / 25.4 / scene.width);
+        renderScene(doc, scene, images);
+        doc.restore();
+      });
+      doc.end();
+    } catch (error) { doc.destroy(); reject(error); }
+  });
+}
+function renderScene(doc, scene, images) {
         for (const op of scene.ops) {
           if (op.type === 'rect') {
             doc.roundedRect(op.x, op.y, op.w, op.h, op.radius || 0);
@@ -42,10 +50,5 @@ async function pdfCards(students, org, db, userId, storage) {
             doc.restore();
           }
         }
-        doc.restore();
-      });
-      doc.end();
-    } catch (error) { doc.destroy(); reject(error); }
-  });
 }
-module.exports = { qr, barcode, pdfCards };
+module.exports = { qr, barcode, pdfCards, renderScene };

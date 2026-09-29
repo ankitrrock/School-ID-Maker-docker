@@ -43,7 +43,7 @@ function createStorage() {
     }
     throw problem(404, 'Image not found.');
   }
-  async function read(db, userId, url) {
+  async function read(db, userId, url, { original = false } = {}) {
     const key = assetPath(url);
     if (!key) return null; // Never fetch arbitrary user-provided URLs on the server.
     await authorize(db, userId, key);
@@ -56,16 +56,20 @@ function createStorage() {
       try { buffer = await fs.readFile(path.join(root, key)); }
       catch (error) { if (error.code === 'ENOENT') throw problem(404, 'Image not found.'); throw error; }
     }
-    return sharp(buffer, { limitInputPixels: 16000000 }).rotate().resize(1200, 1200, { fit: 'inside', withoutEnlargement: true }).png().toBuffer();
+    const image = sharp(buffer, { limitInputPixels: 16000000 }).rotate();
+    if (!original) image.resize(1200, 1200, { fit: 'inside', withoutEnlargement: true });
+    return image.png().toBuffer();
   }
-  async function uploadAsset(buffer, mime, userId) {
+  async function uploadAsset(buffer, mime, userId, { original = false } = {}) {
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(mime)) throw problem(400, 'Choose a JPG, PNG or WEBP image.');
     let normalized;
     try {
       const image = sharp(buffer, { limitInputPixels: 16000000 });
       const meta = await image.metadata();
       if (!['png', 'jpeg', 'webp'].includes(meta.format)) throw new Error('Unsupported image');
-      normalized = await image.rotate().resize(1200, 1200, { fit: 'inside', withoutEnlargement: true }).png().toBuffer();
+      image.rotate();
+      if (!original) image.resize(1200, 1200, { fit: 'inside', withoutEnlargement: true });
+      normalized = await image.png().toBuffer();
     } catch { throw problem(400, 'The uploaded file is not a supported image.'); }
     const key = `organizations/${userId}/${crypto.randomUUID()}.png`;
     if (client) {
