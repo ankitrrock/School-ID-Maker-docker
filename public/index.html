@@ -4,79 +4,216 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>School ID Maker</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:#f4f7fb;color:#111827}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0}.hidden{display:none!important}
-.top{height:64px;background:#111827;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 28px}.brand{font-size:20px;font-weight:800}.wrap{max-width:1180px;margin:30px auto;padding:0 18px}.auth{max-width:440px;margin:8vh auto;background:#fff;padding:30px;border-radius:18px;box-shadow:0 12px 40px #0001}.tabs{display:flex;gap:8px;margin-bottom:20px}.tabs button{padding:10px 16px;border-radius:10px;background:#eef2f7}.tabs button.active{background:#111827;color:#fff}.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:22px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:22px;box-shadow:0 8px 28px #00000008}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:13px;font-weight:700;color:#4b5563}.field input,.field select,.field textarea{padding:11px 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff}.field textarea{min-height:78px;resize:vertical}.primary{background:#2563eb;color:#fff;padding:11px 16px;border-radius:10px;font-weight:700}.secondary{background:#eef2ff;color:#1e40af;padding:10px 14px;border-radius:10px;font-weight:700}.danger{background:#fee2e2;color:#991b1b;padding:8px 12px;border-radius:8px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.muted{color:#6b7280;font-size:13px}.section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.list{display:grid;gap:8px}.item{padding:12px;border:1px solid #e5e7eb;border-radius:10px;display:flex;justify-content:space-between;align-items:center}.color-row{display:flex;gap:14px;align-items:center}.color-row input{width:54px;height:42px;padding:3px}.preview-area{display:flex;justify-content:center;align-items:flex-start;padding:20px;background:#f1f5f9;border-radius:14px;min-height:520px}.idcard{width:330px;min-height:500px;border-radius:18px;overflow:hidden;position:relative;box-shadow:0 15px 40px #0002;background:#fff}.idbg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.18}.idcontent{position:relative;z-index:1;padding:24px;text-align:center}.school-img{width:84px;height:84px;object-fit:cover;border-radius:50%;border:4px solid #fff;box-shadow:0 4px 15px #0002}.student-img{width:120px;height:120px;object-fit:cover;border-radius:14px;margin:18px auto;border:5px solid #fff;box-shadow:0 5px 20px #0002;background:#e5e7eb}.idcontent h2{margin:8px 0 3px}.idcontent h3{margin:2px 0 18px}.meta{text-align:left;background:#fff9;padding:12px;border-radius:12px}.meta div{padding:4px 0}.org-banner{padding:12px 0;border-bottom:1px solid #ffffff88}.setup-note{padding:12px;background:#eff6ff;border-radius:10px;margin-bottom:16px;color:#1e40af}.toolbar{display:flex;gap:8px;margin-bottom:20px}.stat{display:flex;gap:12px}.statbox{padding:12px 16px;background:#f8fafc;border-radius:10px}.upload{border:2px dashed #cbd5e1;padding:18px;border-radius:12px;text-align:center}.toast{position:fixed;right:20px;bottom:20px;background:#111827;color:#fff;padding:12px 16px;border-radius:10px;display:none;z-index:99}@media(max-width:900px){.grid{grid-template-columns:1fr}.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}}
+:root{--pri:#1f4e79;--pri2:#173d5f;--tint:#e8f0f8;--ink:#17212b;--mut:#5f6b78;--line:#dbe2ea;--bg:#eef2f6;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer;border:0}.hidden{display:none!important}
+:focus-visible{outline:3px solid #7fb0e0;outline-offset:2px}
+h1,h2,h3{margin:0;line-height:1.25}h2{font-size:18px}.mut{color:var(--mut);font-size:13px}.grow{flex:1;min-width:0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.end{justify-content:flex-end}
+.btn{padding:9px 15px;border-radius:9px;background:#fff;border:1px solid var(--line);font-weight:600}.btn:hover{background:var(--tint)}
+.btn.primary{background:var(--pri);border-color:var(--pri);color:#fff}.btn.primary:hover{background:var(--pri2)}
+.btn.danger{color:var(--red)}.btn.dangerfill{background:var(--red);border-color:var(--red);color:#fff}.btn.sm{padding:5px 10px;font-size:13px}
+.btn:disabled,.btn.busy{opacity:.55;pointer-events:none}
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}
+.f{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}.f label{font-weight:600;font-size:13.5px}
+.f input,.f select,.f textarea{padding:10px 12px;border:1px solid #c5cfda;border-radius:9px;background:#fff;width:100%}
+.f textarea{min-height:70px;resize:vertical}.hint{font-size:12.5px;color:var(--mut)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.g2 .full{grid-column:1/-1}
+.err{color:var(--red);font-size:13.5px;min-height:20px;margin:4px 0 8px}
+/* auth */
+.auth{max-width:420px;margin:9vh auto;padding:0 16px}.auth .panel{padding:28px}.brand{font-weight:800;font-size:22px;color:var(--pri)}
+.tabs{display:flex;border-bottom:2px solid var(--line);margin:18px 0 20px}.tabs button{flex:1;padding:10px;background:none;font-weight:600;color:var(--mut);border-bottom:3px solid transparent;margin-bottom:-2px}.tabs .on{color:var(--pri);border-color:var(--pri)}
+.pw{position:relative}.pw button{position:absolute;right:6px;top:5px;background:none;color:var(--pri);font-size:13px;font-weight:600;padding:5px 8px}
+/* app shell */
+.top{background:var(--pri);color:#fff;padding:0 24px;min-height:58px;display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.top .brand{color:#fff;font-size:18px}.nav{display:flex;gap:4px;flex:1}.nav button{background:none;color:#cfe0f0;padding:8px 12px;border-radius:8px;font-weight:600}.nav .on{background:#ffffff26;color:#fff}
+.top .btn{background:transparent;color:#fff;border-color:#ffffff66}.top .btn:hover{background:#ffffff22}
+.wrap{max-width:1280px;margin:22px auto;padding:0 18px}
+.dash{display:grid;grid-template-columns:260px minmax(0,1fr) 380px;gap:18px;align-items:start}
+.side{padding:14px}.side .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.clsbtn{width:100%;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:9px;background:none;font-weight:700;text-align:left}.clsbtn:hover,.sec:hover{background:var(--tint)}.clsbtn.open{background:var(--tint)}
+.secs{margin:2px 0 8px 12px;padding-left:10px;border-left:2px solid var(--line)}
+.sec{width:100%;display:flex;justify-content:space-between;padding:8px 10px;border-radius:8px;background:none;text-align:left}.sec.on{background:var(--pri);color:#fff}
+.link{background:none;color:var(--pri);font-weight:600;padding:6px 10px}
+small{color:var(--mut)}.on small{color:#fff9}
+.sect{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.search{padding:10px 12px;border:1px solid #c5cfda;border-radius:9px;width:100%;margin-bottom:12px}
+.stu{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer}.stu:hover{background:#f8fafc}.stu.on{border-color:var(--pri);background:var(--tint)}
+.av{width:44px;height:44px;border-radius:50%;background:#c9d8e8;color:var(--pri);font-weight:700;display:grid;place-items:center;overflow:hidden;flex:none}.av img{width:100%;height:100%;object-fit:cover}
+.empty{text-align:center;color:var(--mut);padding:36px 12px}.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
+.sticky{position:sticky;top:16px}
+.stage{background:#dfe6ee;border-radius:10px;padding:22px 10px;display:flex;justify-content:center;margin:12px 0}
+/* setup */
+.setup{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:18px;align-items:start}
+.types{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.types label{border:2px solid var(--line);border-radius:10px;padding:10px;text-align:center;font-weight:600;cursor:pointer}
+.types input{position:absolute;opacity:0}.types label:has(input:checked){border-color:var(--pri);background:var(--tint);color:var(--pri)}.types label:has(input:focus-visible){outline:3px solid #7fb0e0}
+.colors{display:grid;grid-template-columns:1fr 1fr;gap:14px}.colors input{height:42px;padding:3px}
+.drop{border:2px dashed #b7c4d2;border-radius:10px;padding:14px;background:#fafcfe}
+/* id card */
+.idcard{width:320px;min-height:480px;border-radius:16px;overflow:hidden;position:relative;box-shadow:0 12px 30px #0003;font-family:Georgia,"Times New Roman",serif}
+.idcard:before{content:"";position:absolute;top:12px;left:50%;width:56px;height:9px;margin-left:-28px;border-radius:6px;background:#0003;z-index:2}
+.idbg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.2}
+.idc{position:relative;z-index:1;padding:36px 22px 22px;text-align:center}
+.orgb{padding-bottom:12px;border-bottom:1px solid #8884}.orgb h2{font-size:19px;margin:8px 0 2px}.orgb div{font-size:13px}
+.logo{width:72px;height:72px;object-fit:cover;border-radius:50%;border:3px solid #fff;box-shadow:0 3px 10px #0003}
+.simg{width:112px;height:112px;margin:16px auto 10px;border-radius:12px;border:4px solid #fff;box-shadow:0 4px 14px #0003;background:#e5e7eb;overflow:hidden;display:grid;place-items:center;font:700 32px system-ui;color:#64748b}.simg img{width:100%;height:100%;object-fit:cover}
+.idc h3{font-size:21px;margin-bottom:2px}.idc .sid{font:600 14px system-ui;margin-bottom:12px}
+.meta{text-align:left;background:#ffffffb8;color:#17212b;border-radius:10px;padding:10px 12px;font:13px/1.55 system-ui}
+/* modal + toast */
+.modal{position:fixed;inset:0;background:#0f1c2999;display:grid;place-items:center;padding:16px;z-index:50;overflow:auto}
+.dlg{background:#fff;border-radius:14px;padding:24px;width:100%;max-width:520px;margin:auto}.dlg h2{margin-bottom:16px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#17212b;color:#fff;padding:11px 18px;border-radius:10px;z-index:99;display:none}.toast.bad{background:var(--red)}
+#printArea{display:none}
+@media(max-width:1100px){.dash,.setup{grid-template-columns:1fr}.sticky{position:static}}
+@media(max-width:560px){.g2{grid-template-columns:1fr}.idcard{width:100%;max-width:320px}}
+@media print{body>*:not(#printArea){display:none!important}body{background:#fff}#printArea{display:grid!important;grid-template-columns:repeat(2,320px);gap:14px;justify-content:center}.idcard{box-shadow:none;border:1px solid #ccc;break-inside:avoid}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style>
 </head>
 <body>
-<div id="toast" class="toast"></div>
-<div id="authView" class="auth">
-  <div class="brand" style="color:#111827;margin-bottom:8px">School ID Maker</div>
-  <p class="muted">Create professional ID cards for schools, colleges and individual users.</p>
-  <div class="tabs"><button id="loginTab" class="active">Login</button><button id="signupTab">Create account</button></div>
+<div id="toast" class="toast" role="status"></div>
+
+<div id="authView" class="auth"><div class="panel">
+  <div class="brand">School ID Maker</div>
+  <p class="mut" style="margin:6px 0 0">Make print-ready ID cards for your school, college or team.</p>
+  <div class="tabs"><button id="loginTab" class="on" type="button">Log in</button><button id="signupTab" type="button">Create account</button></div>
   <form id="authForm">
-    <div id="nameField" class="field hidden"><label>Your name</label><input id="authName"></div>
-    <div class="field"><label>Email</label><input id="authEmail" type="email" required></div>
-    <div class="field" style="margin-top:12px"><label>Password</label><input id="authPassword" type="password" minlength="6" required></div>
-    <button class="primary" style="width:100%;margin-top:18px" id="authSubmit">Login</button>
+    <div id="nameField" class="f hidden"><label for="authName">Your name</label><input id="authName" autocomplete="name"></div>
+    <div class="f"><label for="authEmail">Email</label><input id="authEmail" type="email" required autocomplete="email"></div>
+    <div class="f"><label for="authPassword">Password</label><div class="pw"><input id="authPassword" type="password" minlength="6" required autocomplete="current-password"><button type="button" id="pwShow">Show</button></div><span class="hint" id="pwHint"></span></div>
+    <div id="authErr" class="err"></div>
+    <button class="btn primary" style="width:100%" id="authSubmit">Log in</button>
   </form>
-</div>
+</div></div>
 
 <div id="appView" class="hidden">
-<header class="top"><div class="brand">School ID Maker</div><div class="row"><span id="hello"></span><button class="secondary" onclick="logout()">Logout</button></div></header>
+<header class="top"><div class="brand">School ID Maker</div>
+  <nav class="nav" id="nav"><button data-a="nav" data-v="dash" id="navDash">Students and cards</button><button data-a="nav" data-v="setup" id="navSetup">Organization settings</button></nav>
+  <div class="row"><span id="hello"></span><button class="btn sm" id="logoutBtn">Log out</button></div>
+</header>
 <main class="wrap">
-<div id="setupView" class="card hidden">
-  <h2>Set up your organization</h2><div class="setup-note">Before creating ID cards, tell us whether you are a school, college or individual user and configure your card branding.</div>
-  <form id="orgForm"><div class="formgrid">
-    <div class="field"><label>Account type</label><select id="orgType"><option value="school">School</option><option value="college">College</option><option value="individual">Individual</option></select></div>
-    <div class="field"><label>Name</label><input id="orgName" required placeholder="ABC Public School"></div>
-    <div class="field"><label>Tagline</label><input id="orgTagline" placeholder="Learn. Lead. Belong."></div>
-    <div class="field"><label>Academic year</label><input id="orgYear" placeholder="2026-27"></div>
-    <div class="field"><label>Phone</label><input id="orgPhone"></div>
-    <div class="field full"><label>Address</label><textarea id="orgAddress"></textarea></div>
-    <div class="field"><label>Default background color</label><div class="color-row"><input id="bgColor" type="color" value="#ffffff"><span id="bgText">#ffffff</span></div></div>
-    <div class="field"><label>ID-card text color</label><div class="color-row"><input id="textColor" type="color" value="#111827"><span id="textText">#111827</span></div></div>
-    <div class="field full"><label>School / college / organization image</label><div class="upload"><input id="orgImage" type="file" accept="image/png,image/jpeg,image/webp"><div class="muted">This image is used as the ID-card background.</div></div></div>
-  </div><button class="primary" style="margin-top:18px">Save setup & continue</button></form>
+<div id="setupView" class="setup hidden">
+  <form id="orgForm" class="panel">
+    <h2 id="setupTitle">Set up your organization</h2>
+    <p class="mut" id="setupSub" style="margin:4px 0 16px">This appears on every ID card. You can change it later. The preview updates as you type.</p>
+    <div class="types" role="radiogroup" aria-label="Account type">
+      <label><input type="radio" name="otype" value="school" checked>School</label><label><input type="radio" name="otype" value="college">College</label><label><input type="radio" name="otype" value="individual">Individual</label>
+    </div>
+    <div class="g2">
+      <div class="f"><label for="orgName">Name</label><input id="orgName" required placeholder="ABC Public School"></div>
+      <div class="f"><label for="orgTagline">Tagline (optional)</label><input id="orgTagline" placeholder="Learn. Lead. Belong."></div>
+      <div class="f"><label for="orgYear">Academic year</label><input id="orgYear" placeholder="2026-27"></div>
+      <div class="f"><label for="orgPhone">Phone</label><input id="orgPhone" type="tel"></div>
+      <div class="f full"><label for="orgAddress">Address</label><textarea id="orgAddress"></textarea></div>
+    </div>
+    <div class="colors">
+      <div class="f"><label for="bgColor">Card background color</label><input id="bgColor" type="color" value="#ffffff"></div>
+      <div class="f"><label for="textColor">Card text color</label><input id="textColor" type="color" value="#17212b"></div>
+    </div>
+    <div class="f"><label for="orgImage">Logo or background image</label><div class="drop"><input id="orgImage" type="file" accept="image/png,image/jpeg,image/webp"><div class="hint">JPG, PNG or WEBP, up to 5 MB. Shown as the logo and as a faded card background.</div></div></div>
+    <div id="orgErr" class="err"></div>
+    <div class="row"><button class="btn primary" id="orgSave">Save and continue</button><button type="button" class="btn hidden" id="orgCancel" data-a="nav" data-v="dash">Cancel</button></div>
+  </form>
+  <div class="panel sticky"><h2>Card preview</h2><div class="stage"><div id="setupCard"></div></div><div class="hint">Sample student shown. Your real students appear once you add them.</div></div>
 </div>
 
-<div id="dashboard" class="hidden">
-  <div class="toolbar"><button class="primary" onclick="showSetup()">Organization settings</button><button class="secondary" onclick="refresh()">Refresh</button></div>
-  <div class="grid">
-    <div>
-      <div class="card"><div class="section-title"><h2>Classes</h2><button class="secondary" onclick="addClass()">+ Class</button></div><div id="classList" class="list"></div></div>
-      <div class="card" style="margin-top:18px"><div class="section-title"><h2>Students</h2></div><div id="studentPanel" class="muted">Select a class and section to manage students.</div></div>
-    </div>
-    <div class="card"><div class="section-title"><h2>ID-card preview</h2><button class="secondary" onclick="window.print()">Print</button></div><div class="preview-area"><div id="card" class="idcard"></div></div></div>
-  </div>
+<div id="dashView" class="dash hidden">
+  <aside class="panel side"><div class="head"><h2>Classes</h2><button class="btn sm primary" data-a="addclass">+ Class</button></div><div id="classList"></div></aside>
+  <section class="panel" id="stuPanel"></section>
+  <aside class="panel sticky"><h2>ID card preview</h2><div class="stage"><div id="card"></div></div><div class="row"><button class="btn primary" id="printOne" data-a="printone" disabled>Print this card</button></div></aside>
 </div>
 </main></div>
 
+<div id="modal" class="modal hidden"><form id="mForm" class="dlg"><h2 id="mTitle"></h2><div id="mBody"></div><div id="mErr" class="err"></div><div class="row end"><button type="button" class="btn" data-a="close">Cancel</button><button class="btn primary" id="mOk">Save</button></div></form></div>
+<div id="printArea"></div>
+
 <script>
-let mode="login", me=null, org=null, currentSection=null, currentStudents=[];
 const $=id=>document.getElementById(id);
-function toast(m){$("toast").textContent=m;$("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",2600)}
-async function api(url,opt={}){const r=await fetch(url,{credentials:"include",...opt});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.message||"Request failed");return d}
-$("loginTab").onclick=()=>setMode("login");$("signupTab").onclick=()=>setMode("signup");
-function setMode(m){mode=m;$("loginTab").classList.toggle("active",m==="login");$("signupTab").classList.toggle("active",m==="signup");$("nameField").classList.toggle("hidden",m!=="signup");$("authSubmit").textContent=m==="signup"?"Create account":"Login"}
-$("authForm").onsubmit=async e=>{e.preventDefault();try{const d=await api("/api/auth/"+(mode==="signup"?"signup":"login"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:$("authName").value,email:$("authEmail").value,password:$("authPassword").value})});me=d.user;await enter()}catch(e){toast(e.message)}}
-async function enter(){ $("authView").classList.add("hidden");$("appView").classList.remove("hidden");$("hello").textContent="Hi, "+me.name;await loadOrg(); }
-async function loadOrg(){const d=await api("/api/organization");org=d.organization;if(!org){$("setupView").classList.remove("hidden");$("dashboard").classList.add("hidden");return}$("setupView").classList.add("hidden");$("dashboard").classList.remove("hidden");await refresh();}
-function fillOrg(){if(!org)return;$("orgType").value=org.organization_type;$("orgName").value=org.name;$("orgTagline").value=org.tagline;$("orgYear").value=org.academic_year;$("orgPhone").value=org.phone;$("orgAddress").value=org.address;$("bgColor").value=org.background_color||"#ffffff";$("textColor").value=org.text_color||"#111827";syncColors()}
-function showSetup(){$("setupView").classList.remove("hidden");$("dashboard").classList.add("hidden");fillOrg()}
-$("bgColor").oninput=syncColors;$("textColor").oninput=syncColors;
-function syncColors(){$("bgText").textContent=$("bgColor").value;$("textText").textContent=$("textColor").value}
-$("orgForm").onsubmit=async e=>{e.preventDefault();try{let imageUrl=org?.image_url||null;const f=$("orgImage").files[0];if(f){const fd=new FormData();fd.append("image",f);const u=await api("/api/uploads",{method:"POST",body:fd});imageUrl=u.url}const d=await api("/api/organization",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({organizationType:$("orgType").value,name:$("orgName").value,tagline:$("orgTagline").value,address:$("orgAddress").value,phone:$("orgPhone").value,academicYear:$("orgYear").value,imageUrl,backgroundColor:$("bgColor").value,textColor:$("textColor").value})});org=d.organization;toast("Organization settings saved");await loadOrg()}catch(e){toast(e.message)}}
-async function refresh(){const d=await api("/api/classes");renderClasses(d.classes)}
-async function addClass(){const name=prompt("Class name (e.g. Class 10)");if(!name)return;try{await api("/api/classes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});refresh()}catch(e){toast(e.message)}}
-async function renderClasses(classes){$("classList").innerHTML=classes.length?classes.map(c=>`<div class="item"><div><b>${esc(c.name)}</b><div class="muted">${c.section_count} sections · ${c.student_count} students</div></div><button class="secondary" onclick="openClass('${c.id}','${esc(c.name)}')">Open</button></div>`).join(""):`<div class="muted">No classes yet. Add your first class.</div>`}
-async function openClass(id,name){const d=await api("/api/classes/"+id+"/sections");$("studentPanel").innerHTML=`<div class="section-title"><h3>${esc(name)} — Sections</h3><button class="secondary" onclick="addSection('${id}')">+ Section</button></div><div id="sections" class="list">${d.sections.map(s=>`<div class="item"><span><b>${esc(s.name)}</b><small class="muted"> · ${s.student_count} students</small></span><button class="secondary" onclick="openSection('${s.id}','${esc(name)}','${esc(s.name)}')">Students</button></div>`).join("")||'<div class="muted">No sections yet.</div>'}</div>`}
-async function addSection(id){const name=prompt("Section name (e.g. A)");if(!name)return;try{await api("/api/classes/"+id+"/sections",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});const d=await api("/api/classes/"+id+"/sections");$("studentPanel").querySelector("#sections").innerHTML=d.sections.map(s=>`<div class="item"><span><b>${esc(s.name)}</b></span><button class="secondary" onclick="openSection('${s.id}','', '${esc(s.name)}')">Students</button></div>`).join("")}catch(e){toast(e.message)}}
-async function openSection(id,cls,sec){currentSection=id;const d=await api("/api/sections/"+id+"/students");currentStudents=d.students;$("studentPanel").innerHTML=`<div class="section-title"><h3>${esc(cls)} ${esc(sec)}</h3><button class="secondary" onclick="addStudent()">+ Student</button></div><div class="list">${currentStudents.map((s,i)=>`<div class="item"><div><b>${esc(s.name)}</b><div class="muted">${esc(s.student_id)} · ${esc(s.blood_group||"")}</div></div><button class="primary" onclick="previewStudent(${i})">Preview</button></div>`).join("")||'<div class="muted">No students yet.</div>'}</div>`}
-async function addStudent(){const name=prompt("Student name");if(!name)return;const studentId=prompt("Student ID / Roll number");if(!studentId)return;try{await api("/api/sections/"+currentSection+"/students",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,studentId})});openSection(currentSection,"","")}catch(e){toast(e.message)}}
-function previewStudent(i){const s=currentStudents[i];const bg=org.background_color||"#fff",tc=org.text_color||"#111827";$("card").style.color=tc;$("card").style.background=bg;$("card").innerHTML=`<div class="idbg" style="background-color:${bg};${org.image_url?`background-image:url('${org.image_url}')`:''}"></div><div class="idcontent"><div class="org-banner">${org.image_url?`<img class="school-img" src="${org.image_url}">`:''}<h2>${esc(org.name)}</h2><div>${esc(org.tagline||"")}</div></div><div style="padding-top:12px"><div class="student-img">${s.photo_url?`<img src="${s.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`:""}</div><h2>${esc(s.name)}</h2><h3>${esc(s.student_id)}</h3><div class="meta"><div><b>Blood Group:</b> ${esc(s.blood_group||"—")}</div><div><b>DOB:</b> ${esc(s.date_of_birth||"—")}</div><div><b>Phone:</b> ${esc(s.phone||"—")}</div><div><b>Address:</b> ${esc(s.address||"—")}</div></div></div></div>`}
+const J=(m,b)=>({method:m,headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
+const SAMPLE={name:"Aarav Sharma",student_id:"STU-1024",blood_group:"B+",date_of_birth:"2012-05-14",father_name:"Rohit Sharma",phone:"98765 43210"};
+let mode="login",me=null,org=null,classes=[],secs={},openC=null,cur=null,students=[],sel=null,q="",pend=null,mFn=null;
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-async function logout(){await api("/api/auth/logout",{method:"POST"});location.reload()}
-(async()=>{try{const d=await api("/api/auth/me");me=d.user;await enter()}catch{}})();
+function toast(m,bad){const t=$("toast");t.textContent=m;t.className="toast"+(bad?" bad":"");t.style.display="block";clearTimeout(t._t);t._t=setTimeout(()=>t.style.display="none",2800)}
+async function api(url,opt={}){const r=await fetch(url,{credentials:"include",...opt});const d=r.status===204?{}:await r.json().catch(()=>({}));if(!r.ok)throw Error(d.message||"Something went wrong. Please try again.");return d}
+async function busy(btn,fn){btn.classList.add("busy");try{return await fn()}finally{btn.classList.remove("busy")}}
+async function upload(inp){const f=inp.files[0];if(!f)return null;if(f.size>5*1024*1024)throw Error("Image is larger than 5 MB. Choose a smaller one.");const fd=new FormData();fd.append("image",f);return(await api("/api/uploads",{method:"POST",body:fd})).url}
+
+/* ---- auth ---- */
+function setMode(m){mode=m;$("loginTab").classList.toggle("on",m==="login");$("signupTab").classList.toggle("on",m==="signup");$("nameField").classList.toggle("hidden",m!=="signup");$("authName").required=m==="signup";$("authSubmit").textContent=m==="signup"?"Create account":"Log in";$("pwHint").textContent=m==="signup"?"At least 6 characters.":"";$("authErr").textContent=""}
+$("loginTab").onclick=()=>setMode("login");$("signupTab").onclick=()=>setMode("signup");
+$("pwShow").onclick=()=>{const p=$("authPassword"),s=p.type==="password";p.type=s?"text":"password";$("pwShow").textContent=s?"Hide":"Show"};
+$("authForm").onsubmit=async e=>{e.preventDefault();$("authErr").textContent="";
+  await busy($("authSubmit"),async()=>{try{const d=await api("/api/auth/"+(mode==="signup"?"signup":"login"),J("POST",{name:$("authName").value,email:$("authEmail").value,password:$("authPassword").value}));me=d.user;await enter()}catch(x){$("authErr").textContent=x.message}})};
+$("logoutBtn").onclick=async()=>{await api("/api/auth/logout",{method:"POST"}).catch(()=>{});location.reload()};
+async function enter(){$("authView").classList.add("hidden");$("appView").classList.remove("hidden");$("hello").textContent=me.name;
+  org=(await api("/api/organization")).organization;
+  if(!org){showSetup(true)}else{show("dash");await loadClasses()}}
+
+/* ---- views ---- */
+function show(v){$("setupView").classList.toggle("hidden",v!=="setup");$("dashView").classList.toggle("hidden",v!=="dash");$("navDash").classList.toggle("on",v==="dash");$("navSetup").classList.toggle("on",v==="setup");
+  if(v==="setup")showSetup(false)}
+function showSetup(first){$("nav").classList.toggle("hidden",first);$("orgCancel").classList.toggle("hidden",first);
+  $("setupTitle").textContent=first?"Welcome. Let's set up your organization":"Organization settings";
+  $("setupView").classList.remove("hidden");$("dashView").classList.add("hidden");
+  if(org){document.querySelector(`input[name=otype][value=${org.organization_type}]`).checked=true;$("orgName").value=org.name;$("orgTagline").value=org.tagline;$("orgYear").value=org.academic_year;$("orgPhone").value=org.phone;$("orgAddress").value=org.address;$("bgColor").value=org.background_color;$("textColor").value=org.text_color}
+  pend=null;setupPrev()}
+const PH={school:"ABC Public School",college:"XYZ College",individual:"Your name or business"};
+function draft(){return{name:$("orgName").value,tagline:$("orgTagline").value,image_url:pend||org?.image_url,background_color:$("bgColor").value,text_color:$("textColor").value}}
+function setupPrev(){$("setupCard").innerHTML=cardHTML(draft(),SAMPLE)}
+$("orgForm").addEventListener("input",e=>{if(e.target.name==="otype")$("orgName").placeholder=PH[e.target.value];if(e.target.id==="orgImage"){const f=e.target.files[0];pend=f?URL.createObjectURL(f):null}setupPrev()});
+$("orgForm").onsubmit=async e=>{e.preventDefault();$("orgErr").textContent="";
+  await busy($("orgSave"),async()=>{try{let imageUrl=org?.image_url||null;const u=await upload($("orgImage"));if(u)imageUrl=u;
+    org=(await api("/api/organization",J("PUT",{organizationType:document.querySelector("input[name=otype]:checked").value,name:$("orgName").value,tagline:$("orgTagline").value,address:$("orgAddress").value,phone:$("orgPhone").value,academicYear:$("orgYear").value,imageUrl,backgroundColor:$("bgColor").value,textColor:$("textColor").value}))).organization;
+    $("nav").classList.remove("hidden");toast("Settings saved");show("dash");await loadClasses();prev()}catch(x){$("orgErr").textContent=x.message}})};
+
+/* ---- ID card ---- */
+function cardHTML(o,s){const img=o.image_url,ini=(s.name||"?").trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+  const rows=[["Father",s.father_name],["Gender",s.gender],["DOB",s.date_of_birth],["Blood group",s.blood_group],["Phone",s.phone],["Address",s.address]].filter(r=>r[1]).map(r=>`<div><b>${r[0]}:</b> ${esc(r[1])}</div>`).join("");
+  return `<div class="idcard" style="color:${o.text_color||"#17212b"};background:${o.background_color||"#fff"}"><div class="idbg" style="${img?`background-image:url('${img}')`:""}"></div><div class="idc"><div class="orgb">${img?`<img class="logo" src="${img}" alt="">`:""}<h2>${esc(o.name||"Your organization")}</h2><div>${esc(o.tagline||"")}</div></div><div class="simg">${s.photo_url?`<img src="${s.photo_url}" alt="">`:esc(ini)}</div><h3>${esc(s.name)}</h3><div class="sid">${esc(s.student_id)}</div>${rows?`<div class="meta">${rows}</div>`:""}</div></div>`}
+function prev(){const s=students.find(x=>x.id===sel);$("card").innerHTML=s?cardHTML(org,s):`<div class="empty" style="align-self:center"><b>No student selected</b>Pick a student from the list to see their card.</div>`;$("printOne").disabled=!s}
+function printCards(list){$("printArea").innerHTML=list.map(s=>cardHTML(org,s)).join("");window.print()}
+
+/* ---- classes, sections, students ---- */
+async function loadClasses(){classes=(await api("/api/classes")).classes;side();stu()}
+async function loadSecs(cid){secs[cid]=(await api(`/api/classes/${cid}/sections`)).sections}
+function side(){$("classList").innerHTML=classes.length?classes.map(c=>{const o=c.id===openC;return `<div><button class="clsbtn ${o?"open":""}" data-a="toggle" data-id="${c.id}" aria-expanded="${o}"><span>${esc(c.name)}</span><small>${c.student_count}</small></button>${o?`<div class="secs">${(secs[c.id]||[]).map(s=>`<button class="sec ${cur&&cur.id===s.id?"on":""}" data-a="sec" data-id="${s.id}" data-c="${c.id}"><span>Section ${esc(s.name)}</span><small>${s.student_count}</small></button>`).join("")||'<div class="mut" style="padding:6px 10px">No sections yet.</div>'}<button class="link" data-a="addsec" data-id="${c.id}">+ Add section</button></div>`:""}</div>`}).join(""):`<div class="empty"><b>Start with a class</b>Add a class such as "Class 10", then add sections and students.</div>`}
+async function pick(id,cid){cur={id,cid};q="";sel=null;students=(await api(`/api/sections/${id}/students`)).students;side();stu();prev()}
+function stu(){const el=$("stuPanel");
+  if(!cur){el.innerHTML=`<div class="empty"><b>${classes.length?"Choose a section":"No students yet"}</b>${classes.length?"Open a class on the left, then pick a section to see its students.":"Add your first class on the left to begin."}</div>`;return}
+  const cn=classes.find(c=>c.id===cur.cid)?.name||"",sn=(secs[cur.cid]||[]).find(s=>s.id===cur.id)?.name||"";
+  el.innerHTML=`<div class="sect"><div><h2>${esc(cn)}, section ${esc(sn)}</h2><div class="mut">${students.length} student${students.length===1?"":"s"}</div></div><div class="row"><button class="btn" data-a="printall" ${students.length?"":"disabled"}>Print all cards</button><button class="btn primary" data-a="addstu">+ Add student</button></div></div>${students.length?`<input class="search" id="search" placeholder="Search by name or ID" aria-label="Search students" value="${esc(q)}">`:""}<div id="stuList"></div>`;
+  const s=$("search");if(s)s.oninput=()=>{q=s.value.toLowerCase();stuList()};stuList()}
+function stuList(){const l=students.filter(s=>(s.name+" "+s.student_id).toLowerCase().includes(q));
+  $("stuList").innerHTML=!students.length?`<div class="empty"><b>No students in this section</b>Add a student with their details and photo to create an ID card.</div>`:l.length?l.map(s=>`<div class="stu ${s.id===sel?"on":""}" data-a="prev" data-id="${s.id}" tabindex="0"><div class="av">${s.photo_url?`<img src="${s.photo_url}" alt="">`:esc(s.name.trim()[0]||"?").toUpperCase()}</div><div class="grow"><b>${esc(s.name)}</b><div class="mut">${esc(s.student_id)}${s.blood_group?" · "+esc(s.blood_group):""}</div></div><button class="btn sm danger" data-a="del" data-id="${s.id}" aria-label="Delete ${esc(s.name)}">Delete</button></div>`).join(""):`<div class="empty">No student matches "${esc(q)}".</div>`}
+async function afterChange(){await loadClasses();if(cur)await loadSecs(cur.cid);side();stu()}
+
+/* ---- modal ---- */
+function modal(title,body,ok,fn,danger){$("mTitle").textContent=title;$("mBody").innerHTML=body;$("mErr").textContent="";const b=$("mOk");b.textContent=ok;b.className="btn "+(danger?"dangerfill":"primary");mFn=fn;$("modal").classList.remove("hidden");const i=$("mBody").querySelector("input,select");if(i)i.focus()}
+function closeModal(){$("modal").classList.add("hidden");mFn=null}
+$("mForm").onsubmit=async e=>{e.preventDefault();if(!mFn)return;await busy($("mOk"),async()=>{try{await mFn();closeModal()}catch(x){$("mErr").textContent=x.message}})};
+$("modal").onclick=e=>{if(e.target.id==="modal")closeModal()};
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();if((e.key==="Enter"||e.key===" ")&&e.target.classList?.contains("stu")){e.preventDefault();e.target.click()}});
+function askName(title,label,ph,fn){modal(title,`<div class="f"><label for="mIn">${label}</label><input id="mIn" required placeholder="${ph}"></div>`,"Add",()=>fn($("mIn").value.trim()))}
+function studentForm(){const bg=["","A+","A-","B+","B-","O+","O-","AB+","AB-"];
+  modal("Add student",`<div class="g2"><div class="f full"><label for="sName">Full name</label><input id="sName" required></div><div class="f"><label for="sId">Student ID or roll number</label><input id="sId" required></div><div class="f"><label for="sDob">Date of birth</label><input id="sDob" type="date"></div><div class="f"><label for="sGender">Gender</label><select id="sGender"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select></div><div class="f"><label for="sBlood">Blood group</label><select id="sBlood">${bg.map(b=>`<option value="${b}">${b||"Select"}</option>`).join("")}</select></div><div class="f"><label for="sFather">Father's name</label><input id="sFather"></div><div class="f"><label for="sPhone">Phone</label><input id="sPhone" type="tel"></div><div class="f full"><label for="sAddr">Address</label><textarea id="sAddr"></textarea></div><div class="f full"><label for="sPhoto">Photo</label><input id="sPhoto" type="file" accept="image/png,image/jpeg,image/webp"><span class="hint">A clear, front-facing photo works best. Up to 5 MB.</span></div></div>`,"Save student",async()=>{
+    const photoUrl=await upload($("sPhoto"));await api(`/api/sections/${cur.id}/students`,J("POST",{name:$("sName").value,studentId:$("sId").value,dateOfBirth:$("sDob").value,gender:$("sGender").value,bloodGroup:$("sBlood").value,fatherName:$("sFather").value,phone:$("sPhone").value,address:$("sAddr").value,photoUrl}));
+    await pick(cur.id,cur.cid);await afterChange();toast("Student added")})}
+
+/* ---- click actions ---- */
+const A={
+  nav:d=>{if(d.v==="dash"&&!org)return;show(d.v);if(d.v==="dash")prev()},
+  toggle:async d=>{openC=openC===d.id?null:d.id;if(openC&&!secs[openC])await loadSecs(openC);side()},
+  addclass:()=>askName("Add class","Class name","e.g. Class 10",async n=>{await api("/api/classes",J("POST",{name:n}));await loadClasses();toast("Class added")}),
+  addsec:d=>askName("Add section","Section name","e.g. A",async n=>{await api(`/api/classes/${d.id}/sections`,J("POST",{name:n}));await loadSecs(d.id);await loadClasses();toast("Section added")}),
+  sec:d=>pick(d.id,d.c).catch(x=>toast(x.message,true)),
+  addstu:studentForm,
+  prev:d=>{sel=d.id;stuList();prev()},
+  del:d=>{const s=students.find(x=>x.id===d.id);modal("Delete student",`<p>Delete <b>${esc(s.name)}</b> (${esc(s.student_id)})? This can't be undone.</p>`,"Delete",async()=>{await api("/api/students/"+d.id,{method:"DELETE"});if(sel===d.id)sel=null;students=students.filter(x=>x.id!==d.id);await afterChange();prev();toast("Student deleted")},true)},
+  printone:()=>{const s=students.find(x=>x.id===sel);if(s)printCards([s])},
+  printall:()=>printCards(students),
+  close:closeModal
+};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;e.stopPropagation();const f=A[b.dataset.a];if(f)Promise.resolve(f(b.dataset)).catch(x=>toast(x.message,true))});
+setMode("login");
+(async()=>{try{me=(await api("/api/auth/me")).user;await enter()}catch{}})();
 </script>
 </body></html>
