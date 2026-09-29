@@ -1,179 +1,1127 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>School ID Maker</title>
-<style>
-:root{--pri:#1f4e79;--pri2:#173d5f;--tint:#e8f0f8;--ink:#17212b;--mut:#5f6b78;--line:#dbe2ea;--bg:#eef2f6;--red:#b42318}
-*{box-sizing:border-box}body{margin:0;font:15px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
-button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer;border:0}.hidden{display:none!important}
-:focus-visible{outline:3px solid #7fb0e0;outline-offset:2px}
-h1,h2,h3{margin:0;line-height:1.25}h2{font-size:18px}.mut{color:var(--mut);font-size:13px}.grow{flex:1;min-width:0}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.end{justify-content:flex-end}
-.btn{padding:9px 15px;border-radius:9px;background:#fff;border:1px solid var(--line);font-weight:600}.btn:hover{background:var(--tint)}
-.btn.primary{background:var(--pri);border-color:var(--pri);color:#fff}.btn.primary:hover{background:var(--pri2)}
-.btn.danger{color:var(--red)}.btn.dangerfill{background:var(--red);border-color:var(--red);color:#fff}.btn.sm{padding:5px 10px;font-size:13px}
-.btn:disabled,.btn.busy{opacity:.55;pointer-events:none}
-.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}
-.f{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}.f label{font-weight:600;font-size:13.5px}
-.f input,.f select,.f textarea{padding:10px 12px;border:1px solid #c5cfda;border-radius:9px;background:#fff;width:100%}
-.f textarea{min-height:70px;resize:vertical}.hint{font-size:12.5px;color:var(--mut)}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.g2 .full{grid-column:1/-1}
-.err{color:var(--red);font-size:13.5px;min-height:20px;margin:4px 0 8px}
-/* auth */
-.auth{max-width:420px;margin:9vh auto;padding:0 16px}.auth .panel{padding:28px}.brand{font-weight:800;font-size:22px;color:var(--pri)}
-.tabs{display:flex;border-bottom:2px solid var(--line);margin:18px 0 20px}.tabs button{flex:1;padding:10px;background:none;font-weight:600;color:var(--mut);border-bottom:3px solid transparent;margin-bottom:-2px}.tabs .on{color:var(--pri);border-color:var(--pri)}
-.pw{position:relative}.pw button{position:absolute;right:6px;top:5px;background:none;color:var(--pri);font-size:13px;font-weight:600;padding:5px 8px}
-/* app shell */
-.top{background:var(--pri);color:#fff;padding:0 24px;min-height:58px;display:flex;align-items:center;gap:22px;flex-wrap:wrap}
-.top .brand{color:#fff;font-size:18px}.nav{display:flex;gap:4px;flex:1}.nav button{background:none;color:#cfe0f0;padding:8px 12px;border-radius:8px;font-weight:600}.nav .on{background:#ffffff26;color:#fff}
-.top .btn{background:transparent;color:#fff;border-color:#ffffff66}.top .btn:hover{background:#ffffff22}
-.wrap{max-width:1280px;margin:22px auto;padding:0 18px}
-.dash{display:grid;grid-template-columns:260px minmax(0,1fr) 380px;gap:18px;align-items:start}
-.side{padding:14px}.side .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.clsbtn{width:100%;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:9px;background:none;font-weight:700;text-align:left}.clsbtn:hover,.sec:hover{background:var(--tint)}.clsbtn.open{background:var(--tint)}
-.secs{margin:2px 0 8px 12px;padding-left:10px;border-left:2px solid var(--line)}
-.sec{width:100%;display:flex;justify-content:space-between;padding:8px 10px;border-radius:8px;background:none;text-align:left}.sec.on{background:var(--pri);color:#fff}
-.link{background:none;color:var(--pri);font-weight:600;padding:6px 10px}
-small{color:var(--mut)}.on small{color:#fff9}
-.sect{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.search{padding:10px 12px;border:1px solid #c5cfda;border-radius:9px;width:100%;margin-bottom:12px}
-.stu{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer}.stu:hover{background:#f8fafc}.stu.on{border-color:var(--pri);background:var(--tint)}
-.av{width:44px;height:44px;border-radius:50%;background:#c9d8e8;color:var(--pri);font-weight:700;display:grid;place-items:center;overflow:hidden;flex:none}.av img{width:100%;height:100%;object-fit:cover}
-.empty{text-align:center;color:var(--mut);padding:36px 12px}.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
-.sticky{position:sticky;top:16px}
-.stage{background:#dfe6ee;border-radius:10px;padding:22px 10px;display:flex;justify-content:center;margin:12px 0}
-/* setup */
-.setup{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:18px;align-items:start}
-.types{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.types label{border:2px solid var(--line);border-radius:10px;padding:10px;text-align:center;font-weight:600;cursor:pointer}
-.types input{position:absolute;opacity:0}.types label:has(input:checked){border-color:var(--pri);background:var(--tint);color:var(--pri)}.types label:has(input:focus-visible){outline:3px solid #7fb0e0}
-.colors{display:grid;grid-template-columns:1fr 1fr;gap:14px}.colors input{height:42px;padding:3px}
-.drop{border:2px dashed #b7c4d2;border-radius:10px;padding:14px;background:#fafcfe}
-/* id card */
-.idcard{width:320px;min-height:480px;border-radius:16px;overflow:hidden;position:relative;box-shadow:0 12px 30px #0003;font-family:Georgia,"Times New Roman",serif}
-.idcard:before{content:"";position:absolute;top:12px;left:50%;width:56px;height:9px;margin-left:-28px;border-radius:6px;background:#0003;z-index:2}
-.idbg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.2}
-.idc{position:relative;z-index:1;padding:36px 22px 22px;text-align:center}
-.orgb{padding-bottom:12px;border-bottom:1px solid #8884}.orgb h2{font-size:19px;margin:8px 0 2px}.orgb div{font-size:13px}
-.logo{width:72px;height:72px;object-fit:cover;border-radius:50%;border:3px solid #fff;box-shadow:0 3px 10px #0003}
-.simg{width:112px;height:112px;margin:16px auto 10px;border-radius:12px;border:4px solid #fff;box-shadow:0 4px 14px #0003;background:#e5e7eb;overflow:hidden;display:grid;place-items:center;font:700 32px system-ui;color:#64748b}.simg img{width:100%;height:100%;object-fit:cover}
-.idc h3{font-size:21px;margin-bottom:2px}.idc .sid{font:600 14px system-ui;margin-bottom:12px}
-.meta{text-align:left;background:#ffffffb8;color:#17212b;border-radius:10px;padding:10px 12px;font:13px/1.55 system-ui}
-.idbg img{width:100%;height:100%;object-fit:cover}.template-modern{border-top:10px solid currentColor;border-radius:4px}.template-minimal{background:#fff!important;color:#17212b!important;box-shadow:none;border:1px solid #ddd}.template-minimal .idbg{display:none}.card-codes{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}.card-codes img:first-child{width:70px;height:70px}.card-codes img:last-child{width:180px;max-height:65px;object-fit:contain}
-/* modal + toast */
-.modal{position:fixed;inset:0;background:#0f1c2999;display:grid;place-items:center;padding:16px;z-index:50;overflow:auto}
-.dlg{background:#fff;border-radius:14px;padding:24px;width:100%;max-width:520px;margin:auto}.dlg h2{margin-bottom:16px}
-.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#17212b;color:#fff;padding:11px 18px;border-radius:10px;z-index:99;display:none}.toast.bad{background:var(--red)}
-#printArea{display:none}
-@media(max-width:1100px){.dash,.setup{grid-template-columns:1fr}.sticky{position:static}}
-@media(max-width:560px){.g2{grid-template-columns:1fr}.idcard{width:100%;max-width:320px}}
-@media print{body>*:not(#printArea){display:none!important}body{background:#fff}#printArea{display:grid!important;grid-template-columns:repeat(2,320px);gap:14px;justify-content:center}.idcard{box-shadow:none;border:1px solid #ccc;break-inside:avoid}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-</style>
-<style id="sellable-ui">
-@media(max-width:760px){.top{padding:10px 12px;gap:8px}.top .nav{order:3;width:100%;overflow:auto}.top .nav button{white-space:nowrap}.wrap{padding:12px 10px 80px}.dash{grid-template-columns:1fr}.setup{grid-template-columns:1fr}.panel{padding:14px}.g2{grid-template-columns:1fr}.types{grid-template-columns:1fr}.colors{grid-template-columns:1fr}.sticky{position:static}.idcard{max-width:100%}.mobile-stack{flex-direction:column;align-items:stretch}.mobile-stack .btn{width:100%}.search{font-size:16px}}
-.product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.product-box{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.product-box b{display:block;margin-bottom:4px}.badge{display:inline-block;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;background:var(--tint);color:var(--pri)}.probox{border:1px solid #9cc0df;background:#f6fbff}.admin-table{width:100%;border-collapse:collapse}.admin-table th,.admin-table td{padding:9px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}.scroll-x{overflow:auto}@media(max-width:760px){.product-grid{grid-template-columns:1fr}.admin-table{min-width:650px}}
-</style><link rel="stylesheet" href="/designer.css"></head>
-<body>
-<div id="toast" class="toast" role="status"></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>School ID Maker</title>
+    <style>
+      :root {
+        --pri: #1f4e79;
+        --pri2: #173d5f;
+        --tint: #e8f0f8;
+        --ink: #17212b;
+        --mut: #5f6b78;
+        --line: #dbe2ea;
+        --bg: #eef2f6;
+        --red: #b42318;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          15px/1.5 'Segoe UI',
+          system-ui,
+          -apple-system,
+          Roboto,
+          sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+      }
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        cursor: pointer;
+        border: 0;
+      }
+      .hidden {
+        display: none !important;
+      }
+      :focus-visible {
+        outline: 3px solid #7fb0e0;
+        outline-offset: 2px;
+      }
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.25;
+      }
+      h2 {
+        font-size: 18px;
+      }
+      .mut {
+        color: var(--mut);
+        font-size: 13px;
+      }
+      .grow {
+        flex: 1;
+        min-width: 0;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .end {
+        justify-content: flex-end;
+      }
+      .btn {
+        padding: 9px 15px;
+        border-radius: 9px;
+        background: #fff;
+        border: 1px solid var(--line);
+        font-weight: 600;
+      }
+      .btn:hover {
+        background: var(--tint);
+      }
+      .btn.primary {
+        background: var(--pri);
+        border-color: var(--pri);
+        color: #fff;
+      }
+      .btn.primary:hover {
+        background: var(--pri2);
+      }
+      .btn.danger {
+        color: var(--red);
+      }
+      .btn.dangerfill {
+        background: var(--red);
+        border-color: var(--red);
+        color: #fff;
+      }
+      .btn.sm {
+        padding: 5px 10px;
+        font-size: 13px;
+      }
+      .btn:disabled,
+      .btn.busy {
+        opacity: 0.55;
+        pointer-events: none;
+      }
+      .panel {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 20px;
+      }
+      .f {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-bottom: 14px;
+      }
+      .f label {
+        font-weight: 600;
+        font-size: 13.5px;
+      }
+      .f input,
+      .f select,
+      .f textarea {
+        padding: 10px 12px;
+        border: 1px solid #c5cfda;
+        border-radius: 9px;
+        background: #fff;
+        width: 100%;
+      }
+      .f textarea {
+        min-height: 70px;
+        resize: vertical;
+      }
+      .hint {
+        font-size: 12.5px;
+        color: var(--mut);
+      }
+      .g2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 14px;
+      }
+      .g2 .full {
+        grid-column: 1/-1;
+      }
+      .err {
+        color: var(--red);
+        font-size: 13.5px;
+        min-height: 20px;
+        margin: 4px 0 8px;
+      }
+      /* auth */
+      .auth {
+        max-width: 420px;
+        margin: 9vh auto;
+        padding: 0 16px;
+      }
+      .auth .panel {
+        padding: 28px;
+      }
+      .brand {
+        font-weight: 800;
+        font-size: 22px;
+        color: var(--pri);
+      }
+      .tabs {
+        display: flex;
+        border-bottom: 2px solid var(--line);
+        margin: 18px 0 20px;
+      }
+      .tabs button {
+        flex: 1;
+        padding: 10px;
+        background: none;
+        font-weight: 600;
+        color: var(--mut);
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+      }
+      .tabs .on {
+        color: var(--pri);
+        border-color: var(--pri);
+      }
+      .pw {
+        position: relative;
+      }
+      .pw button {
+        position: absolute;
+        right: 6px;
+        top: 5px;
+        background: none;
+        color: var(--pri);
+        font-size: 13px;
+        font-weight: 600;
+        padding: 5px 8px;
+      }
+      /* app shell */
+      .top {
+        background: var(--pri);
+        color: #fff;
+        padding: 0 24px;
+        min-height: 58px;
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        flex-wrap: wrap;
+      }
+      .top .brand {
+        color: #fff;
+        font-size: 18px;
+      }
+      .nav {
+        display: flex;
+        gap: 4px;
+        flex: 1;
+      }
+      .nav button {
+        background: none;
+        color: #cfe0f0;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-weight: 600;
+      }
+      .nav .on {
+        background: #ffffff26;
+        color: #fff;
+      }
+      .top .btn {
+        background: transparent;
+        color: #fff;
+        border-color: #ffffff66;
+      }
+      .top .btn:hover {
+        background: #ffffff22;
+      }
+      .wrap {
+        max-width: 1280px;
+        margin: 22px auto;
+        padding: 0 18px;
+      }
+      .dash {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr) 380px;
+        gap: 18px;
+        align-items: start;
+      }
+      .side {
+        padding: 14px;
+      }
+      .side .head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .clsbtn {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        border-radius: 9px;
+        background: none;
+        font-weight: 700;
+        text-align: left;
+      }
+      .clsbtn:hover,
+      .sec:hover {
+        background: var(--tint);
+      }
+      .clsbtn.open {
+        background: var(--tint);
+      }
+      .secs {
+        margin: 2px 0 8px 12px;
+        padding-left: 10px;
+        border-left: 2px solid var(--line);
+      }
+      .sec {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: none;
+        text-align: left;
+      }
+      .sec.on {
+        background: var(--pri);
+        color: #fff;
+      }
+      .link {
+        background: none;
+        color: var(--pri);
+        font-weight: 600;
+        padding: 6px 10px;
+      }
+      small {
+        color: var(--mut);
+      }
+      .on small {
+        color: #fff9;
+      }
+      .sect {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .search {
+        padding: 10px 12px;
+        border: 1px solid #c5cfda;
+        border-radius: 9px;
+        width: 100%;
+        margin-bottom: 12px;
+      }
+      .stu {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        margin-bottom: 8px;
+        cursor: pointer;
+      }
+      .stu:hover {
+        background: #f8fafc;
+      }
+      .stu.on {
+        border-color: var(--pri);
+        background: var(--tint);
+      }
+      .av {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #c9d8e8;
+        color: var(--pri);
+        font-weight: 700;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        flex: none;
+      }
+      .av img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .empty {
+        text-align: center;
+        color: var(--mut);
+        padding: 36px 12px;
+      }
+      .empty b {
+        display: block;
+        color: var(--ink);
+        font-size: 16px;
+        margin-bottom: 4px;
+      }
+      .sticky {
+        position: sticky;
+        top: 16px;
+      }
+      .stage {
+        background: #dfe6ee;
+        border-radius: 10px;
+        padding: 22px 10px;
+        display: flex;
+        justify-content: center;
+        margin: 12px 0;
+      }
+      /* setup */
+      .setup {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 380px;
+        gap: 18px;
+        align-items: start;
+      }
+      .types {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+      .types label {
+        border: 2px solid var(--line);
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .types input {
+        position: absolute;
+        opacity: 0;
+      }
+      .types label:has(input:checked) {
+        border-color: var(--pri);
+        background: var(--tint);
+        color: var(--pri);
+      }
+      .types label:has(input:focus-visible) {
+        outline: 3px solid #7fb0e0;
+      }
+      .colors {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .colors input {
+        height: 42px;
+        padding: 3px;
+      }
+      .drop {
+        border: 2px dashed #b7c4d2;
+        border-radius: 10px;
+        padding: 14px;
+        background: #fafcfe;
+      }
+      /* id card */
+      .idcard {
+        width: 320px;
+        min-height: 480px;
+        border-radius: 16px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 12px 30px #0003;
+        font-family: Georgia, 'Times New Roman', serif;
+      }
+      .idcard:before {
+        content: '';
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        width: 56px;
+        height: 9px;
+        margin-left: -28px;
+        border-radius: 6px;
+        background: #0003;
+        z-index: 2;
+      }
+      .idbg {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        opacity: 0.2;
+      }
+      .idc {
+        position: relative;
+        z-index: 1;
+        padding: 36px 22px 22px;
+        text-align: center;
+      }
+      .orgb {
+        padding-bottom: 12px;
+        border-bottom: 1px solid #8884;
+      }
+      .orgb h2 {
+        font-size: 19px;
+        margin: 8px 0 2px;
+      }
+      .orgb div {
+        font-size: 13px;
+      }
+      .logo {
+        width: 72px;
+        height: 72px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 3px solid #fff;
+        box-shadow: 0 3px 10px #0003;
+      }
+      .simg {
+        width: 112px;
+        height: 112px;
+        margin: 16px auto 10px;
+        border-radius: 12px;
+        border: 4px solid #fff;
+        box-shadow: 0 4px 14px #0003;
+        background: #e5e7eb;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        font: 700 32px system-ui;
+        color: #64748b;
+      }
+      .simg img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .idc h3 {
+        font-size: 21px;
+        margin-bottom: 2px;
+      }
+      .idc .sid {
+        font: 600 14px system-ui;
+        margin-bottom: 12px;
+      }
+      .meta {
+        text-align: left;
+        background: #ffffffb8;
+        color: #17212b;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font: 13px/1.55 system-ui;
+      }
+      .idbg img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .template-modern {
+        border-top: 10px solid currentColor;
+        border-radius: 4px;
+      }
+      .template-minimal {
+        background: #fff !important;
+        color: #17212b !important;
+        box-shadow: none;
+        border: 1px solid #ddd;
+      }
+      .template-minimal .idbg {
+        display: none;
+      }
+      .card-codes {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .card-codes img:first-child {
+        width: 70px;
+        height: 70px;
+      }
+      .card-codes img:last-child {
+        width: 180px;
+        max-height: 65px;
+        object-fit: contain;
+      }
+      /* modal + toast */
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: #0f1c2999;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        z-index: 50;
+        overflow: auto;
+      }
+      .dlg {
+        background: #fff;
+        border-radius: 14px;
+        padding: 24px;
+        width: 100%;
+        max-width: 520px;
+        margin: auto;
+      }
+      .dlg h2 {
+        margin-bottom: 16px;
+      }
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 22px;
+        transform: translateX(-50%);
+        background: #17212b;
+        color: #fff;
+        padding: 11px 18px;
+        border-radius: 10px;
+        z-index: 99;
+        display: none;
+      }
+      .toast.bad {
+        background: var(--red);
+      }
+      #printArea {
+        display: none;
+      }
+      @media (max-width: 1100px) {
+        .dash,
+        .setup {
+          grid-template-columns: 1fr;
+        }
+        .sticky {
+          position: static;
+        }
+      }
+      @media (max-width: 560px) {
+        .g2 {
+          grid-template-columns: 1fr;
+        }
+        .idcard {
+          width: 100%;
+          max-width: 320px;
+        }
+      }
+      @media print {
+        body > *:not(#printArea) {
+          display: none !important;
+        }
+        body {
+          background: #fff;
+        }
+        #printArea {
+          display: grid !important;
+          grid-template-columns: repeat(2, 320px);
+          gap: 14px;
+          justify-content: center;
+        }
+        .idcard {
+          box-shadow: none;
+          border: 1px solid #ccc;
+          break-inside: avoid;
+        }
+        * {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
+    </style>
+    <style id="sellable-ui">
+      @media (max-width: 760px) {
+        .top {
+          padding: 10px 12px;
+          gap: 8px;
+        }
+        .top .nav {
+          order: 3;
+          width: 100%;
+          overflow: auto;
+        }
+        .top .nav button {
+          white-space: nowrap;
+        }
+        .wrap {
+          padding: 12px 10px 80px;
+        }
+        .dash {
+          grid-template-columns: 1fr;
+        }
+        .setup {
+          grid-template-columns: 1fr;
+        }
+        .panel {
+          padding: 14px;
+        }
+        .g2 {
+          grid-template-columns: 1fr;
+        }
+        .types {
+          grid-template-columns: 1fr;
+        }
+        .colors {
+          grid-template-columns: 1fr;
+        }
+        .sticky {
+          position: static;
+        }
+        .idcard {
+          max-width: 100%;
+        }
+        .mobile-stack {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .mobile-stack .btn {
+          width: 100%;
+        }
+        .search {
+          font-size: 16px;
+        }
+      }
+      .product-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .product-box {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px;
+        background: #fff;
+      }
+      .product-box b {
+        display: block;
+        margin-bottom: 4px;
+      }
+      .badge {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 3px 9px;
+        font-size: 12px;
+        font-weight: 700;
+        background: var(--tint);
+        color: var(--pri);
+      }
+      .probox {
+        border: 1px solid #9cc0df;
+        background: #f6fbff;
+      }
+      .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .admin-table th,
+      .admin-table td {
+        padding: 9px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        font-size: 13px;
+      }
+      .scroll-x {
+        overflow: auto;
+      }
+      @media (max-width: 760px) {
+        .product-grid {
+          grid-template-columns: 1fr;
+        }
+        .admin-table {
+          min-width: 650px;
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="/designer.css" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#174f42" />
+    <script src="/pwa.js" defer></script>
+    <style>
+      @media (display-mode: standalone) {
+        .web-admin-link {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="toast" class="toast" role="status"></div>
 
-<div id="authView" class="auth"><div class="panel">
-  <div class="brand">School ID Maker</div><a class="shop-link" href="/printing">Explore printing services →</a> <a class="shop-link" href="/admin">Admin sign in</a>
-  <p class="mut" style="margin:6px 0 0">Make print-ready ID cards for your school, college or team.</p>
-  <div class="tabs"><button id="loginTab" class="on" type="button">Log in</button><button id="signupTab" type="button">Create account</button></div>
-  <form id="authForm">
-    <div id="nameField" class="f hidden"><label for="authName">Your name</label><input id="authName" autocomplete="name"></div>
-    <div class="f"><label for="authEmail">Email</label><input id="authEmail" type="email" required autocomplete="email"></div>
-    <div class="f"><label for="authPassword">Password</label><div class="pw"><input id="authPassword" type="password" minlength="8" required autocomplete="current-password"><button type="button" id="pwShow">Show</button></div><span class="hint" id="pwHint"></span></div>
-    <div id="authErr" class="err"></div>
-    <button class="btn primary" style="width:100%" id="authSubmit">Log in</button>
-  </form>
-</div></div>
+    <div id="authView" class="auth">
+      <div class="panel">
+        <div class="brand">School ID Maker</div>
+        <a class="shop-link" href="/printing">Explore printing services →</a>
+        <a class="shop-link web-admin-link" href="/admin">Admin sign in</a>
+        <p class="mut" style="margin: 6px 0 0">
+          Make print-ready ID cards for your school, college or team.
+        </p>
+        <div class="tabs">
+          <button id="loginTab" class="on" type="button">Log in</button
+          ><button id="signupTab" type="button">Create account</button>
+        </div>
+        <form id="authForm">
+          <div id="nameField" class="f hidden">
+            <label for="authName">Your name</label><input id="authName" autocomplete="name" />
+          </div>
+          <div class="f">
+            <label for="authEmail">Email</label
+            ><input id="authEmail" type="email" required autocomplete="email" />
+          </div>
+          <div class="f">
+            <label for="authPassword">Password</label>
+            <div class="pw">
+              <input
+                id="authPassword"
+                type="password"
+                minlength="8"
+                required
+                autocomplete="current-password"
+              /><button type="button" id="pwShow">Show</button>
+            </div>
+            <span class="hint" id="pwHint"></span>
+          </div>
+          <div id="authErr" class="err"></div>
+          <button class="btn primary" style="width: 100%" id="authSubmit">Log in</button>
+        </form>
+      </div>
+    </div>
 
-<div id="appView" class="hidden">
-<header class="top"><div class="brand">School ID Maker</div>
-  <nav class="nav" id="nav"><button data-a="nav" data-v="dash" id="navDash">Students and cards</button><button data-a="nav" data-v="design">Customize ID card</button><button data-a="nav" data-v="setup" id="navSetup">Organization settings</button><button data-a="nav" data-v="admin" id="navAdmin" class="hidden">Admin</button></nav>
-  <a class="shop-link" href="/printing">Printing services</a><div class="row"><span id="hello"></span><button class="btn sm" id="logoutBtn">Log out</button></div>
-</header>
-<main class="wrap"><section id="adminView" class="panel hidden">
-<div class="sect"><div><h2>Platform admin</h2><div class="mut">Manage plan activation and printing enquiries.</div></div><button class="btn" data-a="adminRefresh">Refresh</button></div>
-<div id="adminStats" class="product-grid"></div><div class="scroll-x" style="margin-top:14px"><table class="admin-table"><thead><tr><th>Organization</th><th>Email</th><th>Plan</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody id="adminRows"></tbody></table></div>
-<section class="enquiry-inbox"><div class="sect"><div><h2>Printing enquiries</h2><p class="mut">Quote requests from your public printing-services page.</p></div><label>Status <select id="enquiryFilter"><option value="">All</option><option value="new">New</option><option value="contacted">Contacted</option><option value="quoted">Quoted</option><option value="closed">Closed</option></select></label></div>
-<div id="enquiryError" role="alert" class="err"></div><div id="enquiryList"></div><div class="row"><button type="button" class="btn sm" id="enquiryPrev">Previous</button><span id="enquiryPage"></span><button type="button" class="btn sm" id="enquiryNext">Next</button></div></section>
-</section>
-<section id="designView" class="hidden designer-layout">
-  <form id="designForm" class="panel">
-    <div class="sect"><div><span class="eyebrow">MAKE IT YOURS</span><h2>Design your ID card</h2></div><button type="button" class="btn" id="resetDesign">Reset design</button></div>
-    <p class="mut">Choose a starting point, then customize it. Your saved design is used for every card and PDF.</p>
-    <div id="designChoices" class="design-choices" role="radiogroup" aria-label="ID card design"></div>
-    <div class="g2">
-      <div class="f"><label for="cardOrientation">Orientation</label><select id="cardOrientation"><option value="portrait">Portrait · 54 × 86 mm</option><option value="landscape">Landscape · 86 × 54 mm</option></select></div>
-      <div class="f"><label for="cardFont">Font style</label><select id="cardFont"><option value="sans">Clean sans serif</option><option value="serif">Traditional serif</option><option value="mono">Monospace</option></select></div>
-      <div class="f"><label for="cardFontSize">Text size</label><select id="cardFontSize"><option value="compact">Compact</option><option value="normal">Normal</option><option value="large">Large</option></select></div>
-      <div class="f"><label for="cardPhotoShape">Photo shape</label><select id="cardPhotoShape"><option value="rounded">Rounded</option><option value="circle">Circle</option><option value="square">Square</option></select></div>
-      <div class="f"><label for="cardBg">Background</label><input id="cardBg" type="color"></div><div class="f"><label for="cardInk">Text color</label><input id="cardInk" type="color"></div>
-      <div class="f"><label for="cardAccent">Accent color</label><input id="cardAccent" type="color"></div><div class="f"><label for="cardTitle">Card title</label><input id="cardTitle" maxlength="24" placeholder="STUDENT ID"></div>
-      <div class="f full"><label for="cardFooter">Footer text</label><input id="cardFooter" maxlength="60" placeholder="If found, please return to the office."></div>
-    </div>
-    <fieldset class="design-checks"><legend>Card elements</legend><label><input id="cardPhoto" type="checkbox"> Photo</label><label><input id="cardLogo" type="checkbox"> Logo</label><label><input id="cardBackground" type="checkbox"> Background image</label><label><input id="cardQr" type="checkbox"> QR code</label><label><input id="cardBarcode" type="checkbox"> Barcode</label></fieldset>
-    <fieldset class="design-checks"><legend>Student details to display</legend><div id="designFields"></div></fieldset>
-    <p class="hint">Upload your logo and card background in <button type="button" class="link" data-a="nav" data-v="setup">Organization settings</button>.</p>
-    <div id="designError" class="err" role="alert"></div><button class="btn primary" id="saveDesign">Save card design</button>
-  </form>
-  <aside class="panel sticky"><span class="eyebrow">LIVE PREVIEW</span><h2>Your next ID card</h2><div class="stage"><div id="designCard"></div></div><p class="hint">Selected student shown when available. Print the exported PDF at 100% scale.</p><div id="designSaved" role="status" class="hint"></div></aside>
-</section>
-<div id="setupView" class="setup hidden">
-  <form id="orgForm" class="panel">
-    <h2 id="setupTitle">Set up your organization</h2>
-    <p class="mut" id="setupSub" style="margin:4px 0 16px">This appears on every ID card. You can change it later. The preview updates as you type.</p>
-    <div class="types" role="radiogroup" aria-label="Account type">
-      <label><input type="radio" name="otype" value="school" checked>School</label><label><input type="radio" name="otype" value="college">College</label><label><input type="radio" name="otype" value="individual">Individual</label>
-    </div>
-    <div class="g2">
-      <div class="f"><label for="orgName">Name</label><input id="orgName" required placeholder="ABC Public School"></div>
-      <div class="f"><label for="orgTagline">Tagline (optional)</label><input id="orgTagline" placeholder="Learn. Lead. Belong."></div>
-      <div class="f"><label for="orgYear">Academic year</label><input id="orgYear" placeholder="2026-27"></div>
-      <div class="f"><label for="orgPhone">Phone</label><input id="orgPhone" type="tel"></div>
-      <div class="f full"><label for="orgAddress">Address</label><textarea id="orgAddress"></textarea></div>
-    </div>
-    <div class="colors">
-      <div class="f"><label for="bgColor">Card background color</label><input id="bgColor" type="color" value="#ffffff"></div>
-      <div class="f"><label for="textColor">Card text color</label><input id="textColor" type="color" value="#17212b"></div>
-    </div>
-    <div class="g2">
-      <div class="f"><label for="orgImage">Organization logo</label><div class="drop"><input id="orgImage" type="file" accept="image/png,image/jpeg,image/webp"><div id="logoPreview" class="asset-preview"></div><button type="button" id="removeLogo" class="btn sm">Remove logo</button><div class="hint">JPG, PNG or WEBP, up to 5 MB. Shown in the card header.</div></div></div>
-      <div class="f"><label for="orgBackground">ID card background</label><div class="drop"><input id="orgBackground" type="file" accept="image/png,image/jpeg,image/webp"><div id="backgroundPreview" class="asset-preview"></div><button type="button" id="removeBackground" class="btn sm">Remove background</button><div class="hint">JPG, PNG or WEBP, up to 5 MB. Cropped to fill the card and faded for readable text.</div></div></div>
-    </div>
-    <p class="hint">Save settings to apply uploads or removals. Show or hide each image in Customize ID card.</p>
-    <div id="orgErr" class="err"></div>
-    <div class="row"><button class="btn primary" id="orgSave">Save and continue</button><button type="button" class="btn hidden" id="orgCancel" data-a="nav" data-v="dash">Cancel</button></div>
-  </form>
-  <div class="panel sticky"><h2>Card preview</h2><div class="stage"><div id="setupCard"></div></div><div class="hint">Sample student shown. Your real students appear once you add them.</div></div>
-</div>
+    <div id="appView" class="hidden">
+      <header class="top">
+        <div class="brand">School ID Maker</div>
+        <nav class="nav" id="nav">
+          <button data-a="nav" data-v="dash" id="navDash">Students and cards</button
+          ><button data-a="nav" data-v="design">Customize ID card</button
+          ><button data-a="nav" data-v="setup" id="navSetup">Organization settings</button
+          ><button data-a="nav" data-v="admin" id="navAdmin" class="hidden web-admin-link">
+            Admin
+          </button>
+        </nav>
+        <a class="shop-link" href="/orders">My print requests</a
+        ><a class="shop-link" href="/printing">Printing services</a>
+        <div class="row">
+          <span id="hello"></span><button class="btn sm" id="logoutBtn">Log out</button>
+        </div>
+      </header>
+      <main class="wrap">
+        <section id="adminView" class="panel hidden">
+          <div class="sect">
+            <div>
+              <h2>Platform admin</h2>
+              <div class="mut">Manage plan activation and printing enquiries.</div>
+            </div>
+            <button class="btn" data-a="adminRefresh">Refresh</button>
+          </div>
+          <div id="adminStats" class="product-grid"></div>
+          <div class="scroll-x" style="margin-top: 14px">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Organization</th>
+                  <th>Email</th>
+                  <th>Plan</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="adminRows"></tbody>
+            </table>
+          </div>
+          <section class="enquiry-inbox">
+            <div class="sect">
+              <div>
+                <h2>Printing enquiries</h2>
+                <p class="mut">Quote requests from your public printing-services page.</p>
+              </div>
+              <label
+                >Status
+                <select id="enquiryFilter">
+                  <option value="">All</option>
+                  <option value="new">New</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="quoted">Quoted</option>
+                  <option value="closed">Closed</option>
+                </select></label
+              >
+            </div>
+            <div id="enquiryError" role="alert" class="err"></div>
+            <div id="enquiryList"></div>
+            <div class="row">
+              <button type="button" class="btn sm" id="enquiryPrev">Previous</button
+              ><span id="enquiryPage"></span
+              ><button type="button" class="btn sm" id="enquiryNext">Next</button>
+            </div>
+          </section>
+        </section>
+        <section id="designView" class="hidden designer-layout">
+          <form id="designForm" class="panel">
+            <div class="sect">
+              <div>
+                <span class="eyebrow">MAKE IT YOURS</span>
+                <h2>Design your ID card</h2>
+              </div>
+              <button type="button" class="btn" id="resetDesign">Reset design</button>
+            </div>
+            <p class="mut">
+              Choose a starting point, then customize it. Your saved design is used for every card
+              and PDF.
+            </p>
+            <div
+              id="designChoices"
+              class="design-choices"
+              role="radiogroup"
+              aria-label="ID card design"
+            ></div>
+            <div class="g2">
+              <div class="f">
+                <label for="cardOrientation">Orientation</label
+                ><select id="cardOrientation">
+                  <option value="portrait">Portrait · 54 × 86 mm</option>
+                  <option value="landscape">Landscape · 86 × 54 mm</option>
+                </select>
+              </div>
+              <div class="f">
+                <label for="cardFont">Font style</label
+                ><select id="cardFont">
+                  <option value="sans">Clean sans serif</option>
+                  <option value="serif">Traditional serif</option>
+                  <option value="mono">Monospace</option>
+                </select>
+              </div>
+              <div class="f">
+                <label for="cardFontSize">Text size</label
+                ><select id="cardFontSize">
+                  <option value="compact">Compact</option>
+                  <option value="normal">Normal</option>
+                  <option value="large">Large</option>
+                </select>
+              </div>
+              <div class="f">
+                <label for="cardPhotoShape">Photo shape</label
+                ><select id="cardPhotoShape">
+                  <option value="rounded">Rounded</option>
+                  <option value="circle">Circle</option>
+                  <option value="square">Square</option>
+                </select>
+              </div>
+              <div class="f">
+                <label for="cardBg">Background</label><input id="cardBg" type="color" />
+              </div>
+              <div class="f">
+                <label for="cardInk">Text color</label><input id="cardInk" type="color" />
+              </div>
+              <div class="f">
+                <label for="cardAccent">Accent color</label><input id="cardAccent" type="color" />
+              </div>
+              <div class="f">
+                <label for="cardTitle">Card title</label
+                ><input id="cardTitle" maxlength="24" placeholder="STUDENT ID" />
+              </div>
+              <div class="f full">
+                <label for="cardFooter">Footer text</label
+                ><input
+                  id="cardFooter"
+                  maxlength="60"
+                  placeholder="If found, please return to the office."
+                />
+              </div>
+            </div>
+            <fieldset class="design-checks">
+              <legend>Card elements</legend>
+              <label><input id="cardPhoto" type="checkbox" /> Photo</label
+              ><label><input id="cardLogo" type="checkbox" /> Logo</label
+              ><label><input id="cardBackground" type="checkbox" /> Background image</label
+              ><label><input id="cardQr" type="checkbox" /> QR code</label
+              ><label><input id="cardBarcode" type="checkbox" /> Barcode</label>
+            </fieldset>
+            <fieldset class="design-checks">
+              <legend>Student details to display</legend>
+              <div id="designFields"></div>
+            </fieldset>
+            <p class="hint">
+              Upload your logo and card background in
+              <button type="button" class="link" data-a="nav" data-v="setup">
+                Organization settings</button
+              >.
+            </p>
+            <div id="designError" class="err" role="alert"></div>
+            <button class="btn primary" id="saveDesign">Save card design</button>
+          </form>
+          <aside class="panel sticky">
+            <span class="eyebrow">LIVE PREVIEW</span>
+            <h2>Your next ID card</h2>
+            <div class="stage"><div id="designCard"></div></div>
+            <p class="hint">
+              Selected student shown when available. Print the exported PDF at 100% scale.
+            </p>
+            <div id="designSaved" role="status" class="hint"></div>
+          </aside>
+        </section>
+        <div id="setupView" class="setup hidden">
+          <form id="orgForm" class="panel">
+            <h2 id="setupTitle">Set up your organization</h2>
+            <p class="mut" id="setupSub" style="margin: 4px 0 16px">
+              This appears on every ID card. You can change it later. The preview updates as you
+              type.
+            </p>
+            <div class="types" role="radiogroup" aria-label="Account type">
+              <label><input type="radio" name="otype" value="school" checked />School</label
+              ><label><input type="radio" name="otype" value="college" />College</label
+              ><label><input type="radio" name="otype" value="individual" />Individual</label>
+            </div>
+            <div class="g2">
+              <div class="f">
+                <label for="orgName">Name</label
+                ><input id="orgName" required placeholder="ABC Public School" />
+              </div>
+              <div class="f">
+                <label for="orgTagline">Tagline (optional)</label
+                ><input id="orgTagline" placeholder="Learn. Lead. Belong." />
+              </div>
+              <div class="f">
+                <label for="orgYear">Academic year</label
+                ><input id="orgYear" placeholder="2026-27" />
+              </div>
+              <div class="f">
+                <label for="orgPhone">Phone</label><input id="orgPhone" type="tel" />
+              </div>
+              <div class="f full">
+                <label for="orgAddress">Address</label><textarea id="orgAddress"></textarea>
+              </div>
+            </div>
+            <div class="colors">
+              <div class="f">
+                <label for="bgColor">Card background color</label
+                ><input id="bgColor" type="color" value="#ffffff" />
+              </div>
+              <div class="f">
+                <label for="textColor">Card text color</label
+                ><input id="textColor" type="color" value="#17212b" />
+              </div>
+            </div>
+            <div class="g2">
+              <div class="f">
+                <label for="orgImage">Organization logo</label>
+                <div class="drop">
+                  <input id="orgImage" type="file" accept="image/png,image/jpeg,image/webp" />
+                  <div id="logoPreview" class="asset-preview"></div>
+                  <button type="button" id="removeLogo" class="btn sm">Remove logo</button>
+                  <div class="hint">JPG, PNG or WEBP, up to 5 MB. Shown in the card header.</div>
+                </div>
+              </div>
+              <div class="f">
+                <label for="orgBackground">ID card background</label>
+                <div class="drop">
+                  <input id="orgBackground" type="file" accept="image/png,image/jpeg,image/webp" />
+                  <div id="backgroundPreview" class="asset-preview"></div>
+                  <button type="button" id="removeBackground" class="btn sm">
+                    Remove background
+                  </button>
+                  <div class="hint">
+                    JPG, PNG or WEBP, up to 5 MB. Cropped to fill the card and faded for readable
+                    text.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="hint">
+              Save settings to apply uploads or removals. Show or hide each image in Customize ID
+              card.
+            </p>
+            <div id="orgErr" class="err"></div>
+            <div class="row">
+              <button class="btn primary" id="orgSave">Save and continue</button
+              ><button type="button" class="btn hidden" id="orgCancel" data-a="nav" data-v="dash">
+                Cancel
+              </button>
+            </div>
+          </form>
+          <div class="panel sticky">
+            <h2>Card preview</h2>
+            <div class="stage"><div id="setupCard"></div></div>
+            <div class="hint">
+              Sample student shown. Your real students appear once you add them.
+            </div>
+          </div>
+        </div>
 
-<section id="productPanel" class="panel" style="margin-bottom:18px">
-<div class="sect"><div><h2>Plan & product tools</h2><div class="mut">Manage limits, templates, bulk cards and activation.</div></div><span id="planBadge" class="badge">Free</span></div>
-<div class="product-grid">
-<div class="product-box"><b>Usage</b><div id="usageText" class="mut">Loading…</div></div>
-<div class="product-box"><b>Upgrade</b><div class="mut">Pro: ₹499 · manual/COD activation</div><button class="btn primary sm" data-a="cod">Request Pro activation</button></div>
-<div class="product-box"><b>Template</b><select id="templateSelect" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px"><option>Classic</option></select></div>
-</div>
-<div class="row mobile-stack" style="margin-top:12px">
-<button class="btn" data-a="bulkImport" >Import students from Excel</button>
-<button class="btn" data-a="pdfAll">Download selected section as PDF</button>
-<button class="btn" data-a="codes">QR / Barcode</button>
-</div>
-<div id="billingStatus" class="hint" style="margin-top:8px"></div>
-</section><div id="dashView" class="dash hidden">
-  <aside class="panel side"><div class="head"><h2>Classes</h2><button class="btn sm primary" data-a="addclass">+ Class</button></div><div id="classList"></div></aside>
-  <section class="panel" id="stuPanel"></section>
-  <aside class="panel sticky"><h2>ID card preview</h2><div class="stage"><div id="card"></div></div><div class="row"><button class="btn primary" id="printOne" data-a="printone" disabled>Print this card</button></div></aside>
-</div>
-</main></div>
+        <section id="productPanel" class="panel" style="margin-bottom: 18px">
+          <div class="sect">
+            <div>
+              <h2>Plan & product tools</h2>
+              <div class="mut">Manage limits, templates, bulk cards and activation.</div>
+            </div>
+            <span id="planBadge" class="badge">Free</span>
+          </div>
+          <div class="product-grid">
+            <div class="product-box">
+              <b>Usage</b>
+              <div id="usageText" class="mut">Loading…</div>
+            </div>
+            <div class="product-box">
+              <b>Upgrade</b>
+              <div class="mut">Pro: ₹499 · manual/COD activation</div>
+              <button class="btn primary sm" data-a="cod">Request Pro activation</button>
+            </div>
+            <div class="product-box">
+              <b>Template</b
+              ><select
+                id="templateSelect"
+                style="width: 100%; padding: 9px; border: 1px solid var(--line); border-radius: 8px"
+              >
+                <option>Classic</option>
+              </select>
+            </div>
+          </div>
+          <div class="row mobile-stack" style="margin-top: 12px">
+            <button class="btn" data-a="bulkImport">Import students from Excel</button>
+            <button class="btn" data-a="pdfAll">Download selected section as PDF</button>
+            <button class="btn" data-a="codes">QR / Barcode</button>
+          </div>
+          <div id="billingStatus" class="hint" style="margin-top: 8px"></div>
+        </section>
+        <div id="dashView" class="dash hidden">
+          <aside class="panel side">
+            <div class="head">
+              <h2>Classes</h2>
+              <button class="btn sm primary" data-a="addclass">+ Class</button>
+            </div>
+            <div id="classList"></div>
+          </aside>
+          <section class="panel" id="stuPanel"></section>
+          <aside class="panel sticky">
+            <h2>ID card preview</h2>
+            <div class="stage"><div id="card"></div></div>
+            <div class="row">
+              <button class="btn" data-a="requestprint">Request shop printing</button
+              ><button class="btn primary" id="printOne" data-a="printone" disabled>
+                Print this card
+              </button>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
 
-<div id="modal" class="modal hidden"><form id="mForm" class="dlg"><h2 id="mTitle"></h2><div id="mBody"></div><div id="mErr" class="err"></div><div class="row end"><button type="button" class="btn" data-a="close">Cancel</button><button class="btn primary" id="mOk">Save</button></div></form></div>
-<div id="printArea"></div>
+    <div id="modal" class="modal hidden">
+      <form id="mForm" class="dlg">
+        <h2 id="mTitle"></h2>
+        <div id="mBody"></div>
+        <div id="mErr" class="err"></div>
+        <div class="row end">
+          <button type="button" class="btn" data-a="close">Cancel</button
+          ><button class="btn primary" id="mOk">Save</button>
+        </div>
+      </form>
+    </div>
+    <div id="printArea"></div>
 
-<script src="/card-design.js" defer></script>
-<script src="/app.js" defer></script>
-<script src="/designer.js" defer></script>
-</body></html>
+    <script src="/card-design.js" defer></script>
+    <script src="/app.js" defer></script>
+    <script src="/designer.js" defer></script>
+  </body>
+</html>

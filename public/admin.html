@@ -1,14 +1,132 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin — School ID Maker</title><link rel="stylesheet" href="/admin.css"><script src="/admin.js" defer></script></head>
-<body>
-<section id="access" class="access"><a href="/">← ID Card Studio</a><h1>Admin sign in</h1><p>Use your administrator account to view platform records.</p><form id="loginForm"><label>Email<input name="email" type="email" autocomplete="username" required></label><label>Password<input name="password" type="password" autocomplete="current-password" required></label><button id="loginButton">Sign in</button></form><p id="accessError" role="alert"></p><p id="accessHelp" class="muted">Administrator access is configured with ADMIN_EMAIL on the server.</p><button id="accessLogout" hidden>Sign out of current account</button></section>
-<div id="dashboard" hidden>
-  <aside class="sidebar"><a class="brand" href="/admin"><span>S</span> School ID Maker<small>ADMINISTRATION</small></a><nav id="adminNav" aria-label="Admin sections"></nav><div class="sidebar-bottom"><a href="/">↗ ID Card Studio</a><a href="/printing">↗ Printing website</a><button id="logout">Sign out</button></div></aside>
-  <main><header><div><p class="eyebrow">PLATFORM CONTROL CENTER</p><h1 id="pageTitle">Overview</h1></div><div class="header-actions"><span id="adminName"></span><button id="refresh" class="secondary">↻ Refresh</button></div></header>
-    <p id="pageDescription" class="muted"></p><p id="error" class="error" role="alert" hidden></p><p id="loading" role="status" hidden>Loading records…</p>
-    <section id="overview"><div id="metrics" class="metrics"></div><div class="overview-grid"><section class="panel"><div class="panel-heading"><h2>Cards generated</h2><span class="muted">Last 14 days · UTC</span></div><div id="chart" class="chart" role="img" aria-label="Cards generated over the last 14 days"></div><p id="chartSummary" class="muted"></p></section><section class="panel"><p class="eyebrow">NEEDS YOUR ATTENTION</p><h2>Keep things moving</h2><div id="attention"></div></section></div><section class="panel"><div class="panel-heading"><h2>Recent activity</h2><button data-view="activity" class="text-button">View activity →</button></div><div id="recentActivity"></div></section><p id="trackingNote" class="muted"></p></section>
-    <section id="records" hidden><form id="filters" class="filters"><label class="search-label">Search<input id="search" type="search" maxlength="150" placeholder="Search records"></label><label id="statusLabel">Filter<select id="status"></select></label><button>Search</button><button type="button" class="secondary" id="clear">Clear</button></form><div class="panel table-panel"><div class="table-scroll"><table><caption class="sr-only" id="tableCaption">Platform records</caption><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div><p id="empty" class="empty" hidden>No matching records.</p><div class="pagination"><span id="pageInfo" role="status"></span><div><button id="prev" class="secondary">Previous</button><button id="next" class="secondary">Next</button></div></div></div></section>
-  </main>
-</div>
-<dialog id="paymentDialog"><form method="dialog"><h2 id="confirmTitle">Review payment</h2><p id="confirmText"></p><p id="confirmError" class="error" role="alert"></p><div class="dialog-actions"><button value="cancel" class="secondary">Cancel</button><button type="button" id="confirmPayment">Confirm</button></div></form></dialog>
-</body></html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Admin — School ID Maker</title>
+    <link rel="stylesheet" href="/admin.css" />
+    <script src="/admin.js" defer></script>
+  </head>
+  <body>
+    <section id="access" class="access">
+      <a href="/">← ID Card Studio</a>
+      <h1>Admin sign in</h1>
+      <p>Use your administrator account to view platform records.</p>
+      <form id="loginForm">
+        <label>Email<input name="email" type="email" autocomplete="username" required /></label
+        ><label
+          >Password<input
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required /></label
+        ><button id="loginButton">Sign in</button>
+      </form>
+      <p id="accessError" role="alert"></p>
+      <p id="accessHelp" class="muted">
+        Administrator access is configured with ADMIN_EMAIL on the server.
+      </p>
+      <button id="accessLogout" hidden>Sign out of current account</button>
+    </section>
+    <div id="dashboard" hidden>
+      <aside class="sidebar">
+        <a class="brand" href="/admin"
+          ><span>S</span> School ID Maker<small>ADMINISTRATION</small></a
+        >
+        <nav id="adminNav" aria-label="Admin sections"></nav>
+        <div class="sidebar-bottom">
+          <a href="/">↗ ID Card Studio</a><a href="/printing">↗ Printing website</a
+          ><a href="/orders">＋ New print request</a><button id="logout">Sign out</button>
+        </div>
+      </aside>
+      <main>
+        <header>
+          <div>
+            <p class="eyebrow">PLATFORM CONTROL CENTER</p>
+            <h1 id="pageTitle">Overview</h1>
+          </div>
+          <div class="header-actions">
+            <span id="adminName"></span><button id="refresh" class="secondary">↻ Refresh</button>
+          </div>
+        </header>
+        <p id="pageDescription" class="muted"></p>
+        <p id="error" class="error" role="alert" hidden></p>
+        <p id="loading" role="status" hidden>Loading records…</p>
+        <section id="overview">
+          <div id="metrics" class="metrics"></div>
+          <div class="overview-grid">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Cards generated</h2>
+                <span class="muted">Last 14 days · UTC</span>
+              </div>
+              <div
+                id="chart"
+                class="chart"
+                role="img"
+                aria-label="Cards generated over the last 14 days"
+              ></div>
+              <p id="chartSummary" class="muted"></p>
+            </section>
+            <section class="panel">
+              <p class="eyebrow">NEEDS YOUR ATTENTION</p>
+              <h2>Keep things moving</h2>
+              <div id="attention"></div>
+            </section>
+          </div>
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>Recent activity</h2>
+              <button data-view="activity" class="text-button">View activity →</button>
+            </div>
+            <div id="recentActivity"></div>
+          </section>
+          <p id="trackingNote" class="muted"></p>
+        </section>
+        <section id="records" hidden>
+          <form id="filters" class="filters">
+            <label class="search-label"
+              >Search<input
+                id="search"
+                type="search"
+                maxlength="150"
+                placeholder="Search records" /></label
+            ><label id="statusLabel">Filter<select id="status"></select></label
+            ><button>Search</button
+            ><button type="button" class="secondary" id="clear">Clear</button>
+          </form>
+          <div class="panel table-panel">
+            <div class="table-scroll">
+              <table>
+                <caption class="sr-only" id="tableCaption">
+                  Platform records
+                </caption>
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+            <p id="empty" class="empty" hidden>No matching records.</p>
+            <div class="pagination">
+              <span id="pageInfo" role="status"></span>
+              <div>
+                <button id="prev" class="secondary">Previous</button
+                ><button id="next" class="secondary">Next</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <dialog id="paymentDialog">
+      <form method="dialog">
+        <h2 id="confirmTitle">Review payment</h2>
+        <p id="confirmText"></p>
+        <p id="confirmError" class="error" role="alert"></p>
+        <div class="dialog-actions">
+          <button value="cancel" class="secondary">Cancel</button
+          ><button type="button" id="confirmPayment">Confirm</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>

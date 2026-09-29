@@ -1,0 +1,13 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "prettier.requireConfig": true,
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  },
+  "black-formatter.importStrategy": "fromEnvironment",
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv",
+  "files.associations": {
+    "*.webmanifest": "json"
+  }
+}

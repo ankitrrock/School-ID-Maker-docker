@@ -6,11 +6,11 @@ services:
     healthCheckPath: /api/healthz
     envVars:
       - key: PORT
-        value: "3000"
+        value: '3000'
       - key: NODE_ENV
         value: production
       - key: TRUST_PROXY_HOPS
-        value: "1"
+        value: '1'
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
@@ -26,10 +26,10 @@ services:
       - key: SUPABASE_BUCKET
         value: id-card-assets
       - key: FREE_STUDENT_LIMIT
-        value: "50"
+        value: '50'
       - key: FREE_CARD_LIMIT
-        value: "50"
+        value: '50'
       - key: PRO_STUDENT_LIMIT
-        value: "5000"
+        value: '5000'
       - key: PRO_CARD_LIMIT
-        value: "5000"
+        value: '5000'
