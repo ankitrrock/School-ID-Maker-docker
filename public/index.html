@@ -72,12 +72,12 @@ small{color:var(--mut)}.on small{color:#fff9}
 <style id="sellable-ui">
 @media(max-width:760px){.top{padding:10px 12px;gap:8px}.top .nav{order:3;width:100%;overflow:auto}.top .nav button{white-space:nowrap}.wrap{padding:12px 10px 80px}.dash{grid-template-columns:1fr}.setup{grid-template-columns:1fr}.panel{padding:14px}.g2{grid-template-columns:1fr}.types{grid-template-columns:1fr}.colors{grid-template-columns:1fr}.sticky{position:static}.idcard{max-width:100%}.mobile-stack{flex-direction:column;align-items:stretch}.mobile-stack .btn{width:100%}.search{font-size:16px}}
 .product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.product-box{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.product-box b{display:block;margin-bottom:4px}.badge{display:inline-block;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;background:var(--tint);color:var(--pri)}.probox{border:1px solid #9cc0df;background:#f6fbff}.admin-table{width:100%;border-collapse:collapse}.admin-table th,.admin-table td{padding:9px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}.scroll-x{overflow:auto}@media(max-width:760px){.product-grid{grid-template-columns:1fr}.admin-table{min-width:650px}}
-</style></head>
+</style><link rel="stylesheet" href="/designer.css"></head>
 <body>
 <div id="toast" class="toast" role="status"></div>
 
 <div id="authView" class="auth"><div class="panel">
-  <div class="brand">School ID Maker</div>
+  <div class="brand">School ID Maker</div><a class="shop-link" href="/printing">Explore printing services →</a> <a class="shop-link" href="/admin">Admin sign in</a>
   <p class="mut" style="margin:6px 0 0">Make print-ready ID cards for your school, college or team.</p>
   <div class="tabs"><button id="loginTab" class="on" type="button">Log in</button><button id="signupTab" type="button">Create account</button></div>
   <form id="authForm">
@@ -91,12 +91,35 @@ small{color:var(--mut)}.on small{color:#fff9}
 
 <div id="appView" class="hidden">
 <header class="top"><div class="brand">School ID Maker</div>
-  <nav class="nav" id="nav"><button data-a="nav" data-v="dash" id="navDash">Students and cards</button><button data-a="nav" data-v="setup" id="navSetup">Organization settings</button><button data-a="nav" data-v="admin" id="navAdmin" class="hidden">Admin</button></nav>
-  <div class="row"><span id="hello"></span><button class="btn sm" id="logoutBtn">Log out</button></div>
+  <nav class="nav" id="nav"><button data-a="nav" data-v="dash" id="navDash">Students and cards</button><button data-a="nav" data-v="design">Customize ID card</button><button data-a="nav" data-v="setup" id="navSetup">Organization settings</button><button data-a="nav" data-v="admin" id="navAdmin" class="hidden">Admin</button></nav>
+  <a class="shop-link" href="/printing">Printing services</a><div class="row"><span id="hello"></span><button class="btn sm" id="logoutBtn">Log out</button></div>
 </header>
 <main class="wrap"><section id="adminView" class="panel hidden">
-<div class="sect"><div><h2>Platform admin</h2><div class="mut">Manage manual/COD activation requests.</div></div><button class="btn" data-a="adminRefresh">Refresh</button></div>
+<div class="sect"><div><h2>Platform admin</h2><div class="mut">Manage plan activation and printing enquiries.</div></div><button class="btn" data-a="adminRefresh">Refresh</button></div>
 <div id="adminStats" class="product-grid"></div><div class="scroll-x" style="margin-top:14px"><table class="admin-table"><thead><tr><th>Organization</th><th>Email</th><th>Plan</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody id="adminRows"></tbody></table></div>
+<section class="enquiry-inbox"><div class="sect"><div><h2>Printing enquiries</h2><p class="mut">Quote requests from your public printing-services page.</p></div><label>Status <select id="enquiryFilter"><option value="">All</option><option value="new">New</option><option value="contacted">Contacted</option><option value="quoted">Quoted</option><option value="closed">Closed</option></select></label></div>
+<div id="enquiryError" role="alert" class="err"></div><div id="enquiryList"></div><div class="row"><button type="button" class="btn sm" id="enquiryPrev">Previous</button><span id="enquiryPage"></span><button type="button" class="btn sm" id="enquiryNext">Next</button></div></section>
+</section>
+<section id="designView" class="hidden designer-layout">
+  <form id="designForm" class="panel">
+    <div class="sect"><div><span class="eyebrow">MAKE IT YOURS</span><h2>Design your ID card</h2></div><button type="button" class="btn" id="resetDesign">Reset design</button></div>
+    <p class="mut">Choose a starting point, then customize it. Your saved design is used for every card and PDF.</p>
+    <div id="designChoices" class="design-choices" role="radiogroup" aria-label="ID card design"></div>
+    <div class="g2">
+      <div class="f"><label for="cardOrientation">Orientation</label><select id="cardOrientation"><option value="portrait">Portrait · 54 × 86 mm</option><option value="landscape">Landscape · 86 × 54 mm</option></select></div>
+      <div class="f"><label for="cardFont">Font style</label><select id="cardFont"><option value="sans">Clean sans serif</option><option value="serif">Traditional serif</option><option value="mono">Monospace</option></select></div>
+      <div class="f"><label for="cardFontSize">Text size</label><select id="cardFontSize"><option value="compact">Compact</option><option value="normal">Normal</option><option value="large">Large</option></select></div>
+      <div class="f"><label for="cardPhotoShape">Photo shape</label><select id="cardPhotoShape"><option value="rounded">Rounded</option><option value="circle">Circle</option><option value="square">Square</option></select></div>
+      <div class="f"><label for="cardBg">Background</label><input id="cardBg" type="color"></div><div class="f"><label for="cardInk">Text color</label><input id="cardInk" type="color"></div>
+      <div class="f"><label for="cardAccent">Accent color</label><input id="cardAccent" type="color"></div><div class="f"><label for="cardTitle">Card title</label><input id="cardTitle" maxlength="24" placeholder="STUDENT ID"></div>
+      <div class="f full"><label for="cardFooter">Footer text</label><input id="cardFooter" maxlength="60" placeholder="If found, please return to the office."></div>
+    </div>
+    <fieldset class="design-checks"><legend>Card elements</legend><label><input id="cardPhoto" type="checkbox"> Photo</label><label><input id="cardLogo" type="checkbox"> Logo</label><label><input id="cardBackground" type="checkbox"> Background image</label><label><input id="cardQr" type="checkbox"> QR code</label><label><input id="cardBarcode" type="checkbox"> Barcode</label></fieldset>
+    <fieldset class="design-checks"><legend>Student details to display</legend><div id="designFields"></div></fieldset>
+    <p class="hint">Upload your logo and card background in <button type="button" class="link" data-a="nav" data-v="setup">Organization settings</button>.</p>
+    <div id="designError" class="err" role="alert"></div><button class="btn primary" id="saveDesign">Save card design</button>
+  </form>
+  <aside class="panel sticky"><span class="eyebrow">LIVE PREVIEW</span><h2>Your next ID card</h2><div class="stage"><div id="designCard"></div></div><p class="hint">Selected student shown when available. Print the exported PDF at 100% scale.</p><div id="designSaved" role="status" class="hint"></div></aside>
 </section>
 <div id="setupView" class="setup hidden">
   <form id="orgForm" class="panel">
@@ -116,7 +139,11 @@ small{color:var(--mut)}.on small{color:#fff9}
       <div class="f"><label for="bgColor">Card background color</label><input id="bgColor" type="color" value="#ffffff"></div>
       <div class="f"><label for="textColor">Card text color</label><input id="textColor" type="color" value="#17212b"></div>
     </div>
-    <div class="f"><label for="orgImage">Logo or background image</label><div class="drop"><input id="orgImage" type="file" accept="image/png,image/jpeg,image/webp"><div class="hint">JPG, PNG or WEBP, up to 5 MB. Shown as the logo and as a faded card background.</div></div></div>
+    <div class="g2">
+      <div class="f"><label for="orgImage">Organization logo</label><div class="drop"><input id="orgImage" type="file" accept="image/png,image/jpeg,image/webp"><div id="logoPreview" class="asset-preview"></div><button type="button" id="removeLogo" class="btn sm">Remove logo</button><div class="hint">JPG, PNG or WEBP, up to 5 MB. Shown in the card header.</div></div></div>
+      <div class="f"><label for="orgBackground">ID card background</label><div class="drop"><input id="orgBackground" type="file" accept="image/png,image/jpeg,image/webp"><div id="backgroundPreview" class="asset-preview"></div><button type="button" id="removeBackground" class="btn sm">Remove background</button><div class="hint">JPG, PNG or WEBP, up to 5 MB. Cropped to fill the card and faded for readable text.</div></div></div>
+    </div>
+    <p class="hint">Save settings to apply uploads or removals. Show or hide each image in Customize ID card.</p>
     <div id="orgErr" class="err"></div>
     <div class="row"><button class="btn primary" id="orgSave">Save and continue</button><button type="button" class="btn hidden" id="orgCancel" data-a="nav" data-v="dash">Cancel</button></div>
   </form>
@@ -146,5 +173,7 @@ small{color:var(--mut)}.on small{color:#fff9}
 <div id="modal" class="modal hidden"><form id="mForm" class="dlg"><h2 id="mTitle"></h2><div id="mBody"></div><div id="mErr" class="err"></div><div class="row end"><button type="button" class="btn" data-a="close">Cancel</button><button class="btn primary" id="mOk">Save</button></div></form></div>
 <div id="printArea"></div>
 
+<script src="/card-design.js" defer></script>
 <script src="/app.js" defer></script>
+<script src="/designer.js" defer></script>
 </body></html>

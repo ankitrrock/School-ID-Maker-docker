@@ -19,9 +19,9 @@ Razorpay environment variables are reserved for a later online-payment rollout a
 
 ## Plans
 
-Free: 50 students, 50 generated cards, 1 template, manual entry.
+Free: 50 students, 50 generated cards, 5 customizable templates, manual entry.
 
-Pro: 5,000 students, 5,000 generated cards, 3 templates, Excel bulk import.
+Pro: 5,000 students, 5,000 generated cards, 5 customizable templates, Excel bulk import.
 
 ## Included product capabilities
 
@@ -77,3 +77,7 @@ Accepted columns: student_id, name, date_of_birth, gender, blood_group, father_n
 ## Export and quota details
 
 See RUN_LOCAL.md and README.md for current runtime instructions. Imports accept XLSX only and roll back on invalid or duplicate rows. Exports are limited to 100 cards per request; successful PDF generation consumes cumulative card quota. Browser print buttons use the same PDF endpoint. Uploaded images are included in exports; external HTTPS image links are preview-only.
+
+## Printing shop
+
+The public `/printing` catalog accepts quote requests for flex boards, wedding cards, mugs, T-shirts and ID cards. Admin users manage these in the printing enquiries inbox. Requests are stored in PostgreSQL; prices, artwork sharing, payment and fulfillment are arranged separately by the shop.

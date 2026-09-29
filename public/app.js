@@ -1,7 +1,7 @@
 const $=id=>document.getElementById(id);
 const J=(m,b)=>({method:m,headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
 const SAMPLE={name:"Aarav Sharma",student_id:"STU-1024",blood_group:"B+",date_of_birth:"2012-05-14",father_name:"Rohit Sharma",phone:"98765 43210"};
-let mode="login",me=null,org=null,classes=[],secs={},openC=null,cur=null,students=[],sel=null,q="",pend=null,mFn=null;
+let mode="login",me=null,org=null,classes=[],secs={},openC=null,cur=null,students=[],sel=null,q="",pend=undefined,pendBackground=undefined,mFn=null;
 function safeImage(value){
   if(typeof value!=="string")return "";
   if(value.startsWith("/api/assets/file?path="))return value;
@@ -32,20 +32,57 @@ function showSetup(first){$("productPanel").classList.add("hidden");$("nav").cla
   $("setupTitle").textContent=first?"Welcome. Let's set up your organization":"Organization settings";
   $("setupView").classList.remove("hidden");$("dashView").classList.add("hidden");
   if(org){document.querySelector(`input[name=otype][value=${org.organization_type}]`).checked=true;$("orgName").value=org.name;$("orgTagline").value=org.tagline;$("orgYear").value=org.academic_year;$("orgPhone").value=org.phone;$("orgAddress").value=org.address;$("bgColor").value=org.background_color;$("textColor").value=org.text_color}
-  pend=null;setupPrev()}
+  resetOrgImages();setupPrev()}
 const PH={school:"ABC Public School",college:"XYZ College",individual:"Your name or business"};
-function draft(){return{name:$("orgName").value,tagline:$("orgTagline").value,image_url:pend||org?.image_url,background_color:$("bgColor").value,text_color:$("textColor").value,template_id:org?.template_id||"classic"}}
-function setupPrev(){$("setupCard").innerHTML=cardHTML(draft(),SAMPLE)}
-$("orgForm").addEventListener("input",e=>{if(e.target.name==="otype")$("orgName").placeholder=PH[e.target.value];if(e.target.id==="orgImage"){const f=e.target.files[0];pend=f?URL.createObjectURL(f):null}setupPrev()});
+function draft(){return{name:$("orgName").value,tagline:$("orgTagline").value,image_url:pend===undefined?org?.image_url:pend,background_image_url:pendBackground===undefined?org?.background_image_url:pendBackground,background_color:$("bgColor").value,text_color:$("textColor").value,template_id:org?.template_id||"classic",card_design:org?.card_design||{}}}
+function resetOrgImages(){
+  for(const url of [pend,pendBackground])if(url?.startsWith('blob:'))URL.revokeObjectURL(url);
+  pend=undefined;pendBackground=undefined;$('orgImage').value='';$('orgBackground').value='';
+}
+function setupPrev(){
+  const data=draft();$('setupCard').innerHTML=cardHTML(data,SAMPLE);
+  for(const [key,preview,remove,label] of [['image_url','logoPreview','removeLogo','Organization logo'],['background_image_url','backgroundPreview','removeBackground','ID background']]){
+    const src=safeImage(data[key]);$(preview).innerHTML=src?`<img src="${esc(src)}" alt="${label}">`:'<span class="hint">No image selected</span>';$(remove).disabled=!src;
+  }
+}
+$('orgForm').addEventListener('input',e=>{
+  if(e.target.name==='otype')$('orgName').placeholder=PH[e.target.value];
+  if(['orgImage','orgBackground'].includes(e.target.id)){
+    const logo=e.target.id==='orgImage',previous=logo?pend:pendBackground;
+    if(previous?.startsWith('blob:'))URL.revokeObjectURL(previous);
+    const file=e.target.files[0],next=file?URL.createObjectURL(file):undefined;
+    if(logo)pend=next;else pendBackground=next;
+  }
+  setupPrev();
+});
+for(const [button,input,logo] of [['removeLogo','orgImage',true],['removeBackground','orgBackground',false]]){
+  $(button).onclick=()=>{
+    const previous=logo?pend:pendBackground;if(previous?.startsWith('blob:'))URL.revokeObjectURL(previous);
+    if(logo)pend=null;else pendBackground=null;$(input).value='';setupPrev();
+  };
+}
 $("orgForm").onsubmit=async e=>{e.preventDefault();$("orgErr").textContent="";
-  await busy($("orgSave"),async()=>{try{let imageUrl=org?.image_url||null;const u=await upload($("orgImage"));if(u)imageUrl=u;
-    org=(await api("/api/organization",J("PUT",{organizationType:document.querySelector("input[name=otype]:checked").value,name:$("orgName").value,tagline:$("orgTagline").value,address:$("orgAddress").value,phone:$("orgPhone").value,academicYear:$("orgYear").value,imageUrl,backgroundColor:$("bgColor").value,textColor:$("textColor").value}))).organization;
-    $("nav").classList.remove("hidden");toast("Settings saved");show("dash");await loadClasses();prev()}catch(x){$("orgErr").textContent=x.message}})};
+  await busy($("orgSave"),async()=>{try{let imageUrl=draft().image_url||null,backgroundImageUrl=draft().background_image_url||null;
+    const u=await upload($("orgImage"));if(u)imageUrl=u;
+    const background=await upload($("orgBackground"));if(background)backgroundImageUrl=background;
+    org=(await api("/api/organization",J("PUT",{organizationType:document.querySelector("input[name=otype]:checked").value,name:$("orgName").value,tagline:$("orgTagline").value,address:$("orgAddress").value,phone:$("orgPhone").value,academicYear:$("orgYear").value,imageUrl,backgroundImageUrl,backgroundColor:$("bgColor").value,textColor:$("textColor").value}))).organization;
+    resetOrgImages();$("nav").classList.remove("hidden");toast("Settings saved");show("dash");await loadClasses();prev()}catch(x){$("orgErr").textContent=x.message}})};
 
 /* ---- ID card ---- */
-function cardHTML(o,s){const img=safeImage(o.image_url),ini=(s.name||"?").trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase();
-  const rows=[["Father",s.father_name],["Gender",s.gender],["DOB",s.date_of_birth],["Blood group",s.blood_group],["Phone",s.phone],["Address",s.address]].filter(r=>r[1]).map(r=>`<div><b>${r[0]}:</b> ${esc(r[1])}</div>`).join("");
-  return `<div class="idcard template-${["classic","modern","minimal"].includes(o.template_id)?o.template_id:"classic"}" style="color:${/^#[0-9a-f]{6}$/i.test(o.text_color)?o.text_color:"#17212b"};background:${/^#[0-9a-f]{6}$/i.test(o.background_color)?o.background_color:"#ffffff"}"><div class="idbg">${img?`<img src="${imageSrc(img)}" alt="">`:""}</div><div class="idc"><div class="orgb">${img?`<img class="logo" src="${imageSrc(img)}" alt="">`:""}<h2>${esc(o.name||"Your organization")}</h2><div>${esc(o.tagline||"")}</div></div><div class="simg">${s.photo_url?`<img src="${imageSrc(s.photo_url)}" alt="">`:esc(ini)}</div><h3>${esc(s.name)}</h3><div class="sid">${esc(s.student_id)}</div>${rows?`<div class="meta">${rows}</div>`:""}<div class="card-codes"><img alt="QR code" src="/api/qr?format=png&value=${encodeURIComponent(s.student_id)}"><img alt="Barcode" src="/api/barcode?format=png&value=${encodeURIComponent(s.student_id)}"></div></div></div>`}
+let cardRenderId=0;
+function cardHTML(o,s){
+  const scene=CardDesign.scene(o,s),uid=++cardRenderId;
+  const sources={logo:safeImage(o.image_url),background:safeImage(o.background_image_url),photo:safeImage(s.photo_url),qr:'/api/qr?format=png&value='+encodeURIComponent(s.student_id||'SAMPLE'),barcode:'/api/barcode?format=png&value='+encodeURIComponent(s.student_id||'SAMPLE')};
+  const fonts={sans:'Arial, sans-serif',serif:'Times New Roman, serif',mono:'Courier New, monospace'};
+  const content=scene.ops.map((op,index)=>{
+    if(op.type==='rect')return `<rect x="${op.x}" y="${op.y}" width="${op.w}" height="${op.h}" rx="${op.radius}" fill="${op.fill||'none'}" stroke="${op.stroke||'none'}"/>`;
+    if(op.type==='text'){const x=op.align==='center'?op.x+op.w/2:op.align==='right'?op.x+op.w:op.x;return `<text x="${x}" y="${op.y+op.size}" fill="${op.fill}" font-family="${fonts[op.font]}" font-size="${op.size}" font-weight="${op.bold?700:400}" text-anchor="${op.align==='center'?'middle':op.align==='right'?'end':'start'}">${esc(op.text)}</text>`;}
+    const src=sources[op.source];if(!src)return '';
+    const id=`clip-${uid}-${index}`;
+    return `<defs><clipPath id="${id}"><rect x="${op.x}" y="${op.y}" width="${op.w}" height="${op.h}" rx="${op.radius}"/></clipPath></defs><image href="${esc(src)}" x="${op.x}" y="${op.y}" width="${op.w}" height="${op.h}" opacity="${op.opacity}" preserveAspectRatio="xMidYMid ${op.cover?'slice':'meet'}" clip-path="url(#${id})"/>`;
+  }).join('');
+  return `<svg class="id-preview" role="img" aria-label="${esc(scene.template)} ID card for ${esc(s.name||'student')}" viewBox="0 0 ${scene.width} ${scene.height}" xmlns="http://www.w3.org/2000/svg">${content}</svg>`;
+}
 function prev(){const s=students.find(x=>x.id===sel);$("card").innerHTML=s?cardHTML(org,s):`<div class="empty" style="align-self:center"><b>No student selected</b>Pick a student from the list to see their card.</div>`;$("printOne").disabled=!s}
 async function printCards(list){
   if(!list.length)return;
@@ -146,6 +183,7 @@ async function codes(){
 async function adminLoad(){
  try{
   const d=await api("/api/admin/overview");$("adminStats").innerHTML='<div class="product-box"><b>Users</b>'+d.users+'</div><div class="product-box"><b>Organizations</b>'+d.organizations+'</div><div class="product-box"><b>Pro</b>'+d.proOrganizations+'</div><div class="product-box"><b>Pending COD</b>'+d.pendingPayments+'</div>';
+  await loadEnquiries();
   const p=await api("/api/admin/payment-requests");
   $("adminRows").innerHTML=p.requests.map(x=>'<tr><td>'+esc(x.organization_name)+'</td><td>'+esc(x.email)+'</td><td>'+esc(x.plan_code)+'</td><td>₹'+esc(x.amount)+'</td><td>'+esc(x.status)+'</td><td>'+(x.status==="pending"?'<button class="btn sm primary" data-a="approve" data-id="'+x.id+'">Approve</button> <button class="btn sm danger" data-a="reject" data-id="'+x.id+'">Reject</button>':"—")+'</td></tr>').join("");
  }catch(e){toast(e.message,true)}
@@ -155,8 +193,11 @@ async function approvePayment(id,yes){
 }
 const oldShow=show;
 show=function(v){
+ document.querySelectorAll("#nav [data-v]").forEach(button=>button.classList.toggle("on",button.dataset.v===v));
  $("productPanel").classList.toggle("hidden",v!=="dash");
- if(v==="admin"){ $("setupView").classList.add("hidden");$("dashView").classList.add("hidden");$("adminView").classList.remove("hidden");$("navAdmin").classList.add("on");adminLoad();return;}
+ $("designView").classList.toggle("hidden",v!=="design");
+ if(v==="design"){ $("setupView").classList.add("hidden");$("dashView").classList.add("hidden");$("adminView").classList.add("hidden");openDesigner();return;}
+ if(v==="admin"){location.assign("/admin");return;}
  $("adminView").classList.add("hidden");$("navAdmin").classList.remove("on");oldShow(v); if(v==="dash")loadProduct();
 };
 const oldEnter=enter;

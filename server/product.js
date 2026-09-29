@@ -1,5 +1,6 @@
 const ExcelJS = require('exceljs');
 const { PLANS, TEMPLATES, problem, planOf, orgFor, usage, requireLimit, withOrganization } = require('./limits');
+const CardDesign = require('../public/card-design');
 const { qr, barcode, pdfCards } = require('./cards');
 
 async function excelRows(buffer) {
@@ -50,14 +51,26 @@ function registerProductRoutes(app, pool, auth, upload, storage) {
   });
   app.put('/api/templates', auth, async (req, res) => {
     const org = await withOrganization(pool, req.user.id, async (db, org) => {
-      if (!TEMPLATES.slice(0, planOf(org).templates).some(template => template.id === req.body.templateId)) throw problem(403, 'Template is not available on your plan.');
+      if (!TEMPLATES.slice(0, planOf(org).templates).some(template => template.id === req.body.templateId)) throw problem(400, 'Choose one of the five card designs.');
       return (await db.query('update organizations set template_id=$2 where id=$1 returning *', [org.id, req.body.templateId])).rows[0];
     });
-    res.json({ organization: { ...org, image_url: storage.stableUrl(org.image_url) } });
+    res.json({ organization: { ...org, image_url: storage.stableUrl(org.image_url), background_image_url: storage.stableUrl(org.background_image_url) } });
+  });
+  app.put('/api/card-design', auth, async (req, res) => {
+    let design;
+    try { design = CardDesign.validate(req.body?.cardDesign); } catch (error) { throw problem(400, error.message); }
+    if (!TEMPLATES.some(template => template.id === req.body.templateId)) throw problem(400, 'Choose a valid card design.');
+    if (![req.body.backgroundColor, req.body.textColor].every(value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value))) throw problem(400, 'Choose valid background and text colors.');
+    const org = await withOrganization(pool, req.user.id, async (db, org) => (await db.query(
+      'update organizations set template_id=$2,card_design=$3,background_color=$4,text_color=$5,updated_at=now() where id=$1 returning *',
+      [org.id, req.body.templateId, JSON.stringify(design), req.body.backgroundColor, req.body.textColor])).rows[0]);
+    res.json({ organization: { ...org, image_url: storage.stableUrl(org.image_url), background_image_url: storage.stableUrl(org.background_image_url) } });
   });
   app.post(['/api/uploads', '/api/assets/upload'], auth, upload.single('image'), async (req, res) => {
     if (!req.file) throw problem(400, 'Image is required.');
-    res.status(201).json(await storage.uploadAsset(req.file.buffer, req.file.mimetype, req.user.id));
+    const asset = await storage.uploadAsset(req.file.buffer, req.file.mimetype, req.user.id);
+    await pool.query('insert into asset_uploads(user_id,media_type,size_bytes) values($1,$2,$3)', [req.user.id,req.file.mimetype,req.file.size]);
+    res.status(201).json(asset);
   });
   app.get('/api/assets/file', auth, async (req, res) => {
     const buffer = await storage.read(pool, req.user.id, '/api/assets/file?path=' + encodeURIComponent(String(req.query.path || '')));
@@ -70,6 +83,7 @@ function registerProductRoutes(app, pool, auth, upload, storage) {
         where st.id=$1 and c.organization_id=$2`, [req.params.studentId, org.id]);
       if (!check.rows.length) throw problem(404, 'Student not found.');
       const asset = await storage.uploadAsset(req.file.buffer, req.file.mimetype, req.user.id);
+      await db.query('insert into asset_uploads(user_id,media_type,size_bytes) values($1,$2,$3)', [req.user.id,req.file.mimetype,req.file.size]);
       await db.query('update students set photo_url=$2 where id=$1', [req.params.studentId, asset.url]);
       return asset;
     });
@@ -126,20 +140,6 @@ function registerProductRoutes(app, pool, auth, upload, storage) {
     if (!org) throw problem(404, 'Organization not found.');
     const result = await pool.query('select * from payment_requests where organization_id=$1 order by created_at desc limit 5', [org.id]);
     res.json({ plan: org.plan, subscriptionStatus: org.subscription_status, requests: result.rows });
-  });
-  app.use('/api/admin', auth, (req, res, next) => {
-    if (req.user.role !== 'admin') throw problem(403, 'Admin access required.');
-    next();
-  });
-  app.get('/api/admin/overview', async (req, res) => {
-    const [users, organizations, pending, pro] = await Promise.all([
-      pool.query('select count(*)::int count from users'), pool.query('select count(*)::int count from organizations'),
-      pool.query("select count(*)::int count from payment_requests where status='pending'"), pool.query("select count(*)::int count from organizations where plan='pro'")]);
-    res.json({ users: users.rows[0].count, organizations: organizations.rows[0].count, pendingPayments: pending.rows[0].count, proOrganizations: pro.rows[0].count });
-  });
-  app.get('/api/admin/payment-requests', async (req, res) => {
-    const result = await pool.query('select p.*,o.name organization_name,u.email from payment_requests p join organizations o on o.id=p.organization_id join users u on u.id=p.user_id order by p.created_at desc');
-    res.json({ requests: result.rows });
   });
   app.post('/api/admin/payment-requests/:id/:action', async (req, res) => {
     if (!['approve', 'reject'].includes(req.params.action)) throw problem(404, 'Action not found.');

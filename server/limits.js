@@ -4,14 +4,10 @@ function limit(name, fallback) {
   return value;
 }
 const PLANS = {
-  free: { name: 'Free', students: limit('FREE_STUDENT_LIMIT', 50), cards: limit('FREE_CARD_LIMIT', 50), templates: 1, bulkExcel: false, price: 0 },
-  pro: { name: 'Pro', students: limit('PRO_STUDENT_LIMIT', 5000), cards: limit('PRO_CARD_LIMIT', 5000), templates: 3, bulkExcel: true, price: 499 },
+  free: { name: 'Free', students: limit('FREE_STUDENT_LIMIT', 50), cards: limit('FREE_CARD_LIMIT', 50), templates: 5, bulkExcel: false, price: 0 },
+  pro: { name: 'Pro', students: limit('PRO_STUDENT_LIMIT', 5000), cards: limit('PRO_CARD_LIMIT', 5000), templates: 5, bulkExcel: true, price: 499 },
 };
-const TEMPLATES = [
-  { id: 'classic', name: 'Classic', description: 'Clean professional portrait' },
-  { id: 'modern', name: 'Modern', description: 'Bold accent layout' },
-  { id: 'minimal', name: 'Minimal', description: 'Simple white layout' },
-];
+const TEMPLATES = require('../public/card-design').templates;
 function problem(status, message) { return Object.assign(new Error(message), { status }); }
 function planOf(org) { return PLANS[org?.plan] || PLANS.free; }
 async function orgFor(db, userId) {

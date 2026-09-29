@@ -7,6 +7,8 @@ const path = require("path");
 const { rateLimit } = require("express-rate-limit");
 const { Pool } = require("pg");
 const { registerProductRoutes, insertStudent } = require("./product");
+const { registerPrintRoutes, initPrintDb } = require("./printing");
+const { initAdminDb, registerAdminRoutes } = require("./admin");
 const { createStorage } = require("./storage");
 const { problem, requireLimit, withOrganization } = require("./limits");
 
@@ -67,6 +69,17 @@ async function initDb(pool) {
   await pool.query("alter table organizations add column if not exists plan text not null default 'free', add column if not exists subscription_status text not null default 'inactive', add column if not exists template_id text not null default 'classic'");
   await pool.query("create table if not exists usage_counters (organization_id uuid primary key references organizations(id) on delete cascade, students_count integer not null default 0, cards_generated integer not null default 0, updated_at timestamptz not null default now())");
   await pool.query("create table if not exists payment_requests (id uuid primary key default gen_random_uuid(), organization_id uuid not null references organizations(id) on delete cascade, user_id uuid not null references users(id) on delete cascade, plan_code text not null, amount numeric(12,2) not null default 0, status text not null default 'pending', note text not null default '', approved_at timestamptz, approved_by uuid references users(id), created_at timestamptz not null default now())");
+  await pool.query("alter table organizations add column if not exists card_design jsonb not null default '{}'::jsonb");
+  // Split the former combined image once; subsequent starts preserve removed backgrounds.
+  await pool.query(`do $$ begin
+    if not exists (select 1 from information_schema.columns where table_schema=current_schema()
+      and table_name='organizations' and column_name='background_image_url') then
+      alter table organizations add column background_image_url text;
+      update organizations set background_image_url=image_url;
+    end if;
+  end $$`);
+  await initPrintDb(pool);
+  await initAdminDb(pool);
   if(process.env.ADMIN_EMAIL) await pool.query("update users set role='admin' where email=$1",[process.env.ADMIN_EMAIL.toLowerCase()]);
 }
 
@@ -99,6 +112,7 @@ function createApp({ pool, jwtSecret = process.env.JWT_SECRET, storage = createS
     req.user = user;
     next();
   }
+  registerAdminRoutes(app,pool,auth);
   function sign(user) { return jwt.sign({ id: user.id }, jwtSecret, { expiresIn: '7d', algorithm: 'HS256' }); }
   function clean(value) { return String(value ?? '').trim(); }
   function validColor(value, fallback) { return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback; }
@@ -117,6 +131,7 @@ app.post("/api/auth/login", async (req,res)=>{
   const email=clean(req.body.email).toLowerCase(), password=String(req.body.password||"");
   const r=await pool.query("select id,name,email,password_hash,role from users where email=$1",[email]);
   if(!r.rows[0] || !(await bcrypt.compare(password,r.rows[0].password_hash))) return res.status(401).json({message:"Invalid email or password."});
+  await pool.query("update users set last_login_at=now() where id=$1",[r.rows[0].id]);
   const u={id:r.rows[0].id,name:r.rows[0].name,email:r.rows[0].email,role:r.rows[0].role};
   res.cookie("sid",sign(u),{...cookie,maxAge:7*86400000});
   res.json({user:u});
@@ -124,22 +139,25 @@ app.post("/api/auth/login", async (req,res)=>{
 app.post("/api/auth/logout",(req,res)=>{res.clearCookie("sid",cookie);res.json({ok:true});});
 app.get("/api/auth/me",auth,async(req,res)=>res.json({user:req.user}));
 registerProductRoutes(app,pool,auth,upload,storage);
+registerPrintRoutes(app,pool,auth);
 
 app.get("/api/organization",auth,async(req,res)=>{
   const r=await pool.query("select * from organizations where user_id=$1",[req.user.id]);
   const org = r.rows[0];
-  res.json({organization:org ? {...org,image_url:storage.stableUrl(org.image_url)} : null});
+  res.json({organization:org ? {...org,image_url:storage.stableUrl(org.image_url),background_image_url:storage.stableUrl(org.background_image_url)} : null});
 });
 app.put("/api/organization",auth,async(req,res)=>{
   const type=["school","college","individual"].includes(clean(req.body.organizationType))?clean(req.body.organizationType):"school";
   const name=clean(req.body.name);
   if(!name || name.length > 150) return res.status(400).json({message:"Organization name is required."});
-  const values=[req.user.id,type,name,clean(req.body.tagline),clean(req.body.address),clean(req.body.phone),clean(req.body.academicYear),await storage.validateUrl(pool,req.user.id,req.body.imageUrl),validColor(req.body.backgroundColor,"#ffffff"),validColor(req.body.textColor,"#111827")];
+  const values=[req.user.id,type,name,clean(req.body.tagline),clean(req.body.address),clean(req.body.phone),clean(req.body.academicYear),await storage.validateUrl(pool,req.user.id,req.body.imageUrl),validColor(req.body.backgroundColor,"#ffffff"),validColor(req.body.textColor,"#111827"),await storage.validateUrl(pool,req.user.id,req.body.backgroundImageUrl),Object.hasOwn(req.body,"backgroundImageUrl"),Object.hasOwn(req.body,"imageUrl")];
   const r=await pool.query(`
-    insert into organizations(user_id,organization_type,name,tagline,address,phone,academic_year,image_url,background_color,text_color)
-    values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    insert into organizations(user_id,organization_type,name,tagline,address,phone,academic_year,image_url,background_color,text_color,background_image_url)
+    values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
     on conflict(user_id) do update set organization_type=excluded.organization_type,name=excluded.name,tagline=excluded.tagline,
-    address=excluded.address,phone=excluded.phone,academic_year=excluded.academic_year,image_url=excluded.image_url,
+    address=excluded.address,phone=excluded.phone,academic_year=excluded.academic_year,
+    image_url=case when $13 then excluded.image_url else organizations.image_url end,
+    background_image_url=case when $12 then excluded.background_image_url else organizations.background_image_url end,
     background_color=excluded.background_color,text_color=excluded.text_color,updated_at=now()
     returning *`,values);
   res.json({organization:r.rows[0]});

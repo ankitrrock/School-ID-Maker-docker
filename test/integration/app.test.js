@@ -68,6 +68,36 @@ test('current application workflows against PostgreSQL', async t => {
       await request('/api/organization', 'PUT', { name: 'Test School', imageUrl: asset.url }, alice.cookie);
       await request('/api/organization', 'PUT', { name: 'Test School', imageUrl: 'javascript:alert(1)' }, alice.cookie, 400);
     });
+    await t.test('logo and background migrate once, persist independently and enforce ownership', async () => {
+      // Simulate a database from before separate backgrounds were introduced.
+      await pool.query('alter table organizations drop column background_image_url');
+      await initDb(pool);
+      let saved = (await request('/api/organization', 'GET', undefined, alice.cookie)).data.organization;
+      assert.equal(saved.background_image_url, asset.url);
+      const png = await sharp({ create: { width: 12, height: 8, channels: 3, background: '#ff9900' } }).png().toBuffer();
+      const form = new FormData(); form.append('image', new Blob([png], { type: 'image/png' }), 'background.png');
+      const upload = await fetch(base + '/api/uploads', { method: 'POST', headers: { Cookie: alice.cookie }, body: form });
+      assert.equal(upload.status, 201); const background = await upload.json();
+      await request('/api/organization', 'PUT', { name: 'Test School', backgroundImageUrl: background.url }, alice.cookie);
+      saved = (await request('/api/organization', 'GET', undefined, alice.cookie)).data.organization;
+      assert.equal(saved.image_url, asset.url); assert.equal(saved.background_image_url, background.url);
+      await request('/api/organization', 'PUT', { name: 'Other School', backgroundImageUrl: background.url }, bob.cookie, 404);
+      await request('/api/organization', 'PUT', { name: 'Test School', backgroundImageUrl: 'javascript:alert(1)' }, alice.cookie, 400);
+      await request('/api/organization', 'PUT', { name: 'Test School' }, alice.cookie);
+      assert.equal((await request('/api/organization', 'GET', undefined, alice.cookie)).data.organization.background_image_url, background.url);
+      await request('/api/organization', 'PUT', { name: 'Test School', imageUrl: null }, alice.cookie);
+      saved = (await request('/api/organization', 'GET', undefined, alice.cookie)).data.organization;
+      assert.equal(saved.image_url, null); assert.equal(saved.background_image_url, background.url);
+      await request('/api/organization', 'PUT', { name: 'Test School', imageUrl: asset.url, backgroundImageUrl: null }, alice.cookie);
+      await initDb(pool);
+      saved = (await request('/api/organization', 'GET', undefined, alice.cookie)).data.organization;
+      assert.equal(saved.image_url, asset.url); assert.equal(saved.background_image_url, null);
+      await request('/api/organization', 'PUT', { name: 'Test School', backgroundImageUrl: background.url }, alice.cookie);
+      const design = (await request('/api/card-design', 'PUT', { templateId: 'classic', cardDesign: {}, backgroundColor: '#ffffff', textColor: '#111827' }, alice.cookie)).data.organization;
+      assert.equal(design.image_url, asset.url); assert.equal(design.background_image_url, background.url);
+      const template = (await request('/api/templates', 'PUT', { templateId: 'classic' }, alice.cookie)).data.organization;
+      assert.equal(template.background_image_url, background.url);
+    });
     await t.test('card quotas are serialized, tenant checked, and PDFs contain images', async () => {
       await request('/api/bulk-cards', 'POST', { studentIds: [first.id] }, bob.cookie, 404);
       const responses = await Promise.all([1, 2, 3].map(() => fetch(base + '/api/bulk-cards', { method: 'POST', headers: { Cookie: alice.cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ studentIds: [first.id] }) })));
@@ -75,7 +105,7 @@ test('current application workflows against PostgreSQL', async t => {
       const pdf = Buffer.from(await responses.find(response => response.ok).arrayBuffer());
       assert.equal(pdf.subarray(0, 5).toString(), '%PDF-'); assert.match(pdf.toString('latin1'), /\/Subtype \/Image/);
       assert.equal((await request('/api/usage', 'GET', undefined, alice.cookie)).data.usage.cards_generated, 2);
-      await request('/api/templates', 'PUT', { templateId: 'modern' }, alice.cookie, 403);
+      await request('/api/templates', 'PUT', { templateId: 'modern' }, alice.cookie);
     });
     await t.test('admin role comes from database and payment transitions are atomic', async () => {
       const forgedRole = 'sid=' + jwt.sign({ id: bob.user.id, role: 'admin' }, secret);
@@ -87,9 +117,50 @@ test('current application workflows against PostgreSQL', async t => {
       await request(`/api/admin/payment-requests/${payment.id}/approve`, 'POST', undefined, bob.cookie);
       await request(`/api/admin/payment-requests/${payment.id}/reject`, 'POST', undefined, bob.cookie, 409);
       const templates = (await request('/api/templates', 'GET', undefined, alice.cookie)).data.templates;
-      assert.equal(templates.length, 3);
+      assert.equal(templates.length, 5);
       await request('/api/templates', 'PUT', { templateId: 'modern' }, alice.cookie);
       assert.equal((await request('/api/organization', 'GET', undefined, alice.cookie)).data.organization.template_id, 'modern');
+    });
+    await t.test('five designs save per organization and reject invalid customization', async () => {
+      const cardDesign = { orientation: 'landscape', accentColor: '#804020', showQr: false, visibleFields: ['phone'], footerText: 'Please return to reception' };
+      for (const templateId of ['classic', 'modern', 'minimal', 'corporate', 'event']) {
+        await request('/api/card-design', 'PUT', { templateId, cardDesign, backgroundColor: '#f0f0f0', textColor: '#123456' }, alice.cookie);
+        const saved = (await request('/api/organization', 'GET', undefined, alice.cookie)).data.organization;
+        assert.equal(saved.template_id, templateId); assert.equal(saved.card_design.orientation, 'landscape');
+        assert.deepEqual(saved.card_design.visibleFields, ['phone']); assert.equal(saved.background_color, '#f0f0f0');
+      }
+      const body = { templateId: 'event', cardDesign, backgroundColor: '#f0f0f0', textColor: '#123456' };
+      await request('/api/card-design', 'PUT', body, undefined, 401);
+      await request('/api/card-design', 'PUT', { ...body, cardDesign: { showPhoto: 'yes' } }, alice.cookie, 400);
+      await request('/api/card-design', 'PUT', { ...body, backgroundColor: 'url(bad)' }, alice.cookie, 400);
+      await request('/api/card-design', 'PUT', { ...body, templateId: 'missing' }, alice.cookie, 400);
+      assert.equal((await request('/api/organization', 'GET', undefined, alice.cookie)).data.organization.card_design.showQr, false);
+      assert.deepEqual((await request('/api/organization', 'GET', undefined, bob.cookie)).data.organization.card_design, {});
+      const pdf = await request('/api/bulk-cards', 'POST', { studentIds: [first.id] }, alice.cookie);
+      assert.equal(Buffer.from(await pdf.response.arrayBuffer()).subarray(0, 5).toString(), '%PDF-');
+    });
+    await t.test('public printing requests are validated and only admins can manage them', async () => {
+      await request('/printing');
+      assert.equal((await request('/api/printing/catalog')).data.products.length, 5);
+      const input = { productId: 'mugs', productOption: 'Photo mug', name: '<Test Customer>', phone: '9876543210', email: 'print@example.test', city: 'Test City', quantity: 12, details: 'Logo on both sides' };
+      await request('/api/printing/enquiries', 'POST', { ...input, quantity: 0 }, undefined, 400);
+      await request('/api/printing/enquiries', 'POST', { ...input, productOption: 'Polo T-shirt' }, undefined, 400);
+      const id = (await request('/api/printing/enquiries', 'POST', input, undefined, 201)).data.id;
+      await request('/api/admin/print-enquiries', 'GET', undefined, undefined, 401);
+      await request('/api/admin/print-enquiries', 'GET', undefined, alice.cookie, 403);
+      await request('/api/admin/print-enquiries/' + id, 'PATCH', { status: 'closed' }, alice.cookie, 403);
+      const inbox = (await request('/api/admin/print-enquiries?status=new&page=1', 'GET', undefined, bob.cookie)).data;
+      assert.equal(inbox.total, 1); assert.equal(inbox.enquiries[0].name, input.name);
+      assert.equal(inbox.enquiries[0].quantity, 12);
+      await request('/api/admin/print-enquiries/' + id, 'PATCH', { status: 'quoted' }, bob.cookie);
+      assert.equal((await request('/api/admin/print-enquiries?status=new', 'GET', undefined, bob.cookie)).data.total, 0);
+      assert.equal((await request('/api/admin/print-enquiries?status=quoted', 'GET', undefined, bob.cookie)).data.enquiries[0].id, id);
+      await request('/api/admin/print-enquiries/' + id, 'PATCH', { status: 'invalid' }, bob.cookie, 400);
+      await request('/api/admin/print-enquiries/not-a-uuid', 'PATCH', { status: 'closed' }, bob.cookie, 400);
+      await request('/api/admin/print-enquiries/' + randomUUID(), 'PATCH', { status: 'closed' }, bob.cookie, 404);
+      await request('/api/admin/print-enquiries?page=0', 'GET', undefined, bob.cookie, 400);
+      for (let n = 0; n < 7; n++) await request('/api/printing/enquiries', 'POST', input, undefined, 201);
+      await request('/api/printing/enquiries', 'POST', input, undefined, 429);
     });
     await t.test('XLSX import rolls back duplicates and includes manual students in quota', async () => {
       async function importRows(rows, expected) {
@@ -105,6 +176,50 @@ test('current application workflows against PostgreSQL', async t => {
       await request(`/api/students/${first.id}`, 'DELETE', undefined, alice.cookie, 204);
       await request(`/api/sections/${alice.section.id}/students`, 'POST', { name: 'Replacement', studentId: 'R1', photoUrl: asset.url }, alice.cookie, 201);
       assert.equal((await request('/api/usage', 'GET', undefined, alice.cookie)).data.usage.students_count, 5);
+    });
+    await t.test('admin reports enforce roles, reflect real totals and paginate without secrets', async () => {
+      for (const endpoint of ['overview', 'users', 'organizations', 'students', 'payment-requests', 'uploads', 'activity']) {
+        await request('/api/admin/' + endpoint, 'GET', undefined, undefined, 401);
+        await request('/api/admin/' + endpoint, 'GET', undefined, alice.cookie, 403);
+      }
+      const overview = (await request('/api/admin/overview', 'GET', undefined, bob.cookie)).data;
+      assert.equal(overview.users, 2); assert.equal(overview.organizations, 2);
+      assert.equal(overview.students, 5); assert.equal(overview.classes, 2); assert.equal(overview.sections, 2);
+      assert.equal(overview.cardsGenerated, 3); assert.equal(overview.uploads, 2);
+      assert.equal(overview.approvedPaymentAmount, 499); assert.equal(overview.pendingPayments, 0);
+      assert.equal(overview.trends.length, 14); assert.equal(overview.trends.reduce((n, d) => n + d.cards, 0), 3);
+      const orgs = (await request('/api/admin/organizations?q=alice&status=pro', 'GET', undefined, bob.cookie)).data;
+      assert.equal(orgs.total, 1); assert.equal(orgs.organizations[0].students, 5);
+      assert.equal(orgs.organizations[0].cards_generated, 3); assert.equal(orgs.organizations[0].has_background, true);
+      const students = (await request('/api/admin/students?q=Replacement', 'GET', undefined, bob.cookie)).data;
+      assert.equal(students.total, 1); assert.equal(students.students[0].class_name, 'Class 1');
+      assert.equal((await request('/api/admin/payment-requests?status=approved', 'GET', undefined, bob.cookie)).data.total, 1);
+      assert.equal((await request('/api/admin/print-enquiries?q=print@example.test', 'GET', undefined, bob.cookie)).data.total, 8);
+      const events = (await request('/api/admin/activity?status=cards', 'GET', undefined, bob.cookie)).data;
+      assert.equal(events.total, 3); assert.equal(events.events.reduce((n, event) => n + event.quantity, 0), 3);
+      // Failed student inserts/imports do not leave successful activity behind.
+      const created = (await request('/api/admin/activity?q=student.created', 'GET', undefined, bob.cookie)).data;
+      assert.equal(created.total, 6);
+      const enquiryUpdate = (await request('/api/admin/activity?q=enquiry.quoted', 'GET', undefined, bob.cookie)).data.events[0];
+      assert.equal(enquiryUpdate.email, bob.user.email);
+      await request('/api/auth/login', 'POST', { email: 'alice@example.test', password: 'test-pass-123' });
+      assert.ok((await request('/api/admin/users?q=alice', 'GET', undefined, bob.cookie)).data.users[0].last_login_at);
+      await request('/api/admin/users?page=0', 'GET', undefined, bob.cookie, 400);
+      await request('/api/admin/users?q=' + 'x'.repeat(151), 'GET', undefined, bob.cookie, 400);
+      await request('/api/admin/users?status=owner', 'GET', undefined, bob.cookie, 400);
+      assert.equal((await request('/api/admin/users?q=' + encodeURIComponent("' OR 1=1 --"), 'GET', undefined, bob.cookie)).data.total, 0);
+      await pool.query("insert into users(name,email,password_hash) select 'Pagination '||n,'page'||n||'@example.test','private-test-hash' from generate_series(1,26) n");
+      const firstPage = (await request('/api/admin/users?q=Pagination&page=1', 'GET', undefined, bob.cookie)).data;
+      const secondPage = (await request('/api/admin/users?q=Pagination&page=2', 'GET', undefined, bob.cookie)).data;
+      assert.equal(firstPage.total, 26); assert.equal(firstPage.users.length, 25); assert.equal(secondPage.users.length, 1);
+      assert.equal(new Set([...firstPage.users, ...secondPage.users].map(user => user.id)).size, 26);
+      assert.ok(firstPage.users.every(user => !Object.hasOwn(user, 'password_hash')));
+      assert.ok(!JSON.stringify((await request('/api/admin/activity', 'GET', undefined, bob.cookie)).data).includes('private-test-hash'));
+      // Direct admin access does not require the administrator's own organization.
+      await pool.query('delete from organizations where user_id=$1', [bob.user.id]);
+      await request('/api/admin/overview', 'GET', undefined, bob.cookie);
+      await pool.query("update users set role='user' where id=$1", [bob.user.id]);
+      await request('/api/admin/overview', 'GET', undefined, bob.cookie, 403);
     });
     await t.test('health and API error responses are JSON', async () => {
       assert.deepEqual((await request('/api/healthz')).data, { status: 'ok' });
