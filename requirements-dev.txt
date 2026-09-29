@@ -1,2 +1,2 @@
 # Optional: only needed when editing run.py
-black==25.1.0
+black==26.5.1
