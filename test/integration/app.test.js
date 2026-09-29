@@ -177,6 +177,50 @@ test('current application workflows against PostgreSQL', async t => {
       await request(`/api/sections/${alice.section.id}/students`, 'POST', { name: 'Replacement', studentId: 'R1', photoUrl: asset.url }, alice.cookie, 201);
       assert.equal((await request('/api/usage', 'GET', undefined, alice.cookie)).data.usage.students_count, 5);
     });
+    await t.test('admin reports enforce roles, reflect real totals and paginate without secrets', async () => {
+      for (const endpoint of ['overview', 'users', 'organizations', 'students', 'payment-requests', 'uploads', 'activity']) {
+        await request('/api/admin/' + endpoint, 'GET', undefined, undefined, 401);
+        await request('/api/admin/' + endpoint, 'GET', undefined, alice.cookie, 403);
+      }
+      const overview = (await request('/api/admin/overview', 'GET', undefined, bob.cookie)).data;
+      assert.equal(overview.users, 2); assert.equal(overview.organizations, 2);
+      assert.equal(overview.students, 5); assert.equal(overview.classes, 2); assert.equal(overview.sections, 2);
+      assert.equal(overview.cardsGenerated, 3); assert.equal(overview.uploads, 2);
+      assert.equal(overview.approvedPaymentAmount, 499); assert.equal(overview.pendingPayments, 0);
+      assert.equal(overview.trends.length, 14); assert.equal(overview.trends.reduce((n, d) => n + d.cards, 0), 3);
+      const orgs = (await request('/api/admin/organizations?q=alice&status=pro', 'GET', undefined, bob.cookie)).data;
+      assert.equal(orgs.total, 1); assert.equal(orgs.organizations[0].students, 5);
+      assert.equal(orgs.organizations[0].cards_generated, 3); assert.equal(orgs.organizations[0].has_background, true);
+      const students = (await request('/api/admin/students?q=Replacement', 'GET', undefined, bob.cookie)).data;
+      assert.equal(students.total, 1); assert.equal(students.students[0].class_name, 'Class 1');
+      assert.equal((await request('/api/admin/payment-requests?status=approved', 'GET', undefined, bob.cookie)).data.total, 1);
+      assert.equal((await request('/api/admin/print-enquiries?q=print@example.test', 'GET', undefined, bob.cookie)).data.total, 8);
+      const events = (await request('/api/admin/activity?status=cards', 'GET', undefined, bob.cookie)).data;
+      assert.equal(events.total, 3); assert.equal(events.events.reduce((n, event) => n + event.quantity, 0), 3);
+      // Failed student inserts/imports do not leave successful activity behind.
+      const created = (await request('/api/admin/activity?q=student.created', 'GET', undefined, bob.cookie)).data;
+      assert.equal(created.total, 6);
+      const enquiryUpdate = (await request('/api/admin/activity?q=enquiry.quoted', 'GET', undefined, bob.cookie)).data.events[0];
+      assert.equal(enquiryUpdate.email, bob.user.email);
+      await request('/api/auth/login', 'POST', { email: 'alice@example.test', password: 'test-pass-123' });
+      assert.ok((await request('/api/admin/users?q=alice', 'GET', undefined, bob.cookie)).data.users[0].last_login_at);
+      await request('/api/admin/users?page=0', 'GET', undefined, bob.cookie, 400);
+      await request('/api/admin/users?q=' + 'x'.repeat(151), 'GET', undefined, bob.cookie, 400);
+      await request('/api/admin/users?status=owner', 'GET', undefined, bob.cookie, 400);
+      assert.equal((await request('/api/admin/users?q=' + encodeURIComponent("' OR 1=1 --"), 'GET', undefined, bob.cookie)).data.total, 0);
+      await pool.query("insert into users(name,email,password_hash) select 'Pagination '||n,'page'||n||'@example.test','private-test-hash' from generate_series(1,26) n");
+      const firstPage = (await request('/api/admin/users?q=Pagination&page=1', 'GET', undefined, bob.cookie)).data;
+      const secondPage = (await request('/api/admin/users?q=Pagination&page=2', 'GET', undefined, bob.cookie)).data;
+      assert.equal(firstPage.total, 26); assert.equal(firstPage.users.length, 25); assert.equal(secondPage.users.length, 1);
+      assert.equal(new Set([...firstPage.users, ...secondPage.users].map(user => user.id)).size, 26);
+      assert.ok(firstPage.users.every(user => !Object.hasOwn(user, 'password_hash')));
+      assert.ok(!JSON.stringify((await request('/api/admin/activity', 'GET', undefined, bob.cookie)).data).includes('private-test-hash'));
+      // Direct admin access does not require the administrator's own organization.
+      await pool.query('delete from organizations where user_id=$1', [bob.user.id]);
+      await request('/api/admin/overview', 'GET', undefined, bob.cookie);
+      await pool.query("update users set role='user' where id=$1", [bob.user.id]);
+      await request('/api/admin/overview', 'GET', undefined, bob.cookie, 403);
+    });
     await t.test('health and API error responses are JSON', async () => {
       assert.deepEqual((await request('/api/healthz')).data, { status: 'ok' });
       await request('/api/missing', 'GET', undefined, alice.cookie, 404);

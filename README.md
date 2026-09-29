@@ -78,3 +78,26 @@ ID Card Studio, the administrator can open **Admin** to see printing enquiries,
 filter them, and update their status (new, contacted, quoted, closed). Contact the
 customer separately to confirm pricing, artwork and delivery; notifications and
 artwork uploads are not part of the quote form.
+
+## Admin dashboard
+
+Open **/admin** (or **Admin sign in** on the login page). First create your account,
+set `ADMIN_EMAIL` to that account's email in `.env`, then restart/recreate the app
+with `docker compose up --build -d`. Sign in using that account's password. Admins
+can access this page without completing organization setup.
+
+The dashboard includes platform totals, a 14-day card-generation chart, searchable
+and paginated users, organizations, student records, manual payment requests,
+printing enquiries, upload history and activity. Organization reports show class,
+section and student counts, card quota usage, plan, design and image availability.
+Admins can approve/reject manual payments and update enquiry status.
+
+Activity and upload history start when this update is installed. Existing account,
+organization, student, payment and enquiry records are visible immediately. Activity
+is recorded in the same database transaction as successful changes. It records
+related accounts, not browser page views, failed login attempts or physical prints.
+Upload history shows original file sizes and includes files later removed from cards;
+it is not a live storage inventory. Approved payment totals describe manual approvals,
+not independently verified bank transactions. All admin data APIs require an admin
+role read from the database on each request; credentials and signing secrets are
+never included in reports.

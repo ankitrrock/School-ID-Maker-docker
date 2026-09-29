@@ -42,15 +42,17 @@ function registerPrintRoutes(app, pool, auth) {
   app.get('/api/admin/print-enquiries', auth, admin, async (req, res) => {
     const status = req.query.status || '';
     if (status && !STATUSES.includes(status)) throw problem(400, 'Invalid enquiry status.');
+    const q = req.query.q || '';
+    if (typeof q !== 'string' || q.length > 150) throw problem(400, 'Search must be up to 150 characters.');
     const page = Number(req.query.page || 1);
     if (!Number.isSafeInteger(page) || page < 1 || page > 100000) throw problem(400, 'Invalid page.');
-    const result = await pool.query("select * from print_enquiries where ($1='' or status=$1) order by created_at desc,id desc limit 25 offset $2", [status, (page - 1) * 25]);
-    const total = (await pool.query("select count(*)::int total from print_enquiries where ($1='' or status=$1)", [status])).rows[0].total;
+    const result = await pool.query("select * from print_enquiries where ($1='' or status=$1) and ($3='' or strpos(lower(name||' '||phone||' '||email||' '||city||' '||product_option),lower($3))>0) order by created_at desc,id desc limit 25 offset $2", [status, (page - 1) * 25, q.trim()]);
+    const total = (await pool.query("select count(*)::int total from print_enquiries where ($1='' or status=$1) and ($2='' or strpos(lower(name||' '||phone||' '||email||' '||city||' '||product_option),lower($2))>0)", [status,q.trim()])).rows[0].total;
     res.set('Cache-Control', 'no-store').json({ enquiries: result.rows, total, page });
   });
   app.patch('/api/admin/print-enquiries/:id', auth, admin, async (req, res) => {
     if (!STATUSES.includes(req.body?.status)) throw problem(400, 'Choose a valid enquiry status.');
-    const result = await pool.query('update print_enquiries set status=$2,updated_at=now() where id=$1 returning id,status', [req.params.id, req.body.status]);
+    const result = await pool.query('update print_enquiries set status=$2,updated_at=now(),updated_by=$3 where id=$1 returning id,status', [req.params.id, req.body.status, req.user.id]);
     if (!result.rows.length) throw problem(404, 'Enquiry not found.');
     res.json({ enquiry: result.rows[0] });
   });

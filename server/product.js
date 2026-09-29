@@ -68,7 +68,9 @@ function registerProductRoutes(app, pool, auth, upload, storage) {
   });
   app.post(['/api/uploads', '/api/assets/upload'], auth, upload.single('image'), async (req, res) => {
     if (!req.file) throw problem(400, 'Image is required.');
-    res.status(201).json(await storage.uploadAsset(req.file.buffer, req.file.mimetype, req.user.id));
+    const asset = await storage.uploadAsset(req.file.buffer, req.file.mimetype, req.user.id);
+    await pool.query('insert into asset_uploads(user_id,media_type,size_bytes) values($1,$2,$3)', [req.user.id,req.file.mimetype,req.file.size]);
+    res.status(201).json(asset);
   });
   app.get('/api/assets/file', auth, async (req, res) => {
     const buffer = await storage.read(pool, req.user.id, '/api/assets/file?path=' + encodeURIComponent(String(req.query.path || '')));
@@ -81,6 +83,7 @@ function registerProductRoutes(app, pool, auth, upload, storage) {
         where st.id=$1 and c.organization_id=$2`, [req.params.studentId, org.id]);
       if (!check.rows.length) throw problem(404, 'Student not found.');
       const asset = await storage.uploadAsset(req.file.buffer, req.file.mimetype, req.user.id);
+      await db.query('insert into asset_uploads(user_id,media_type,size_bytes) values($1,$2,$3)', [req.user.id,req.file.mimetype,req.file.size]);
       await db.query('update students set photo_url=$2 where id=$1', [req.params.studentId, asset.url]);
       return asset;
     });
@@ -137,20 +140,6 @@ function registerProductRoutes(app, pool, auth, upload, storage) {
     if (!org) throw problem(404, 'Organization not found.');
     const result = await pool.query('select * from payment_requests where organization_id=$1 order by created_at desc limit 5', [org.id]);
     res.json({ plan: org.plan, subscriptionStatus: org.subscription_status, requests: result.rows });
-  });
-  app.use('/api/admin', auth, (req, res, next) => {
-    if (req.user.role !== 'admin') throw problem(403, 'Admin access required.');
-    next();
-  });
-  app.get('/api/admin/overview', async (req, res) => {
-    const [users, organizations, pending, pro] = await Promise.all([
-      pool.query('select count(*)::int count from users'), pool.query('select count(*)::int count from organizations'),
-      pool.query("select count(*)::int count from payment_requests where status='pending'"), pool.query("select count(*)::int count from organizations where plan='pro'")]);
-    res.json({ users: users.rows[0].count, organizations: organizations.rows[0].count, pendingPayments: pending.rows[0].count, proOrganizations: pro.rows[0].count });
-  });
-  app.get('/api/admin/payment-requests', async (req, res) => {
-    const result = await pool.query('select p.*,o.name organization_name,u.email from payment_requests p join organizations o on o.id=p.organization_id join users u on u.id=p.user_id order by p.created_at desc');
-    res.json({ requests: result.rows });
   });
   app.post('/api/admin/payment-requests/:id/:action', async (req, res) => {
     if (!['approve', 'reject'].includes(req.params.action)) throw problem(404, 'Action not found.');

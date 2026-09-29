@@ -8,6 +8,7 @@ const { rateLimit } = require("express-rate-limit");
 const { Pool } = require("pg");
 const { registerProductRoutes, insertStudent } = require("./product");
 const { registerPrintRoutes, initPrintDb } = require("./printing");
+const { initAdminDb, registerAdminRoutes } = require("./admin");
 const { createStorage } = require("./storage");
 const { problem, requireLimit, withOrganization } = require("./limits");
 
@@ -78,6 +79,7 @@ async function initDb(pool) {
     end if;
   end $$`);
   await initPrintDb(pool);
+  await initAdminDb(pool);
   if(process.env.ADMIN_EMAIL) await pool.query("update users set role='admin' where email=$1",[process.env.ADMIN_EMAIL.toLowerCase()]);
 }
 
@@ -110,6 +112,7 @@ function createApp({ pool, jwtSecret = process.env.JWT_SECRET, storage = createS
     req.user = user;
     next();
   }
+  registerAdminRoutes(app,pool,auth);
   function sign(user) { return jwt.sign({ id: user.id }, jwtSecret, { expiresIn: '7d', algorithm: 'HS256' }); }
   function clean(value) { return String(value ?? '').trim(); }
   function validColor(value, fallback) { return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback; }
@@ -128,6 +131,7 @@ app.post("/api/auth/login", async (req,res)=>{
   const email=clean(req.body.email).toLowerCase(), password=String(req.body.password||"");
   const r=await pool.query("select id,name,email,password_hash,role from users where email=$1",[email]);
   if(!r.rows[0] || !(await bcrypt.compare(password,r.rows[0].password_hash))) return res.status(401).json({message:"Invalid email or password."});
+  await pool.query("update users set last_login_at=now() where id=$1",[r.rows[0].id]);
   const u={id:r.rows[0].id,name:r.rows[0].name,email:r.rows[0].email,role:r.rows[0].role};
   res.cookie("sid",sign(u),{...cookie,maxAge:7*86400000});
   res.json({user:u});

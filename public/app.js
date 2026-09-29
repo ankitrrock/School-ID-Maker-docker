@@ -197,7 +197,7 @@ show=function(v){
  $("productPanel").classList.toggle("hidden",v!=="dash");
  $("designView").classList.toggle("hidden",v!=="design");
  if(v==="design"){ $("setupView").classList.add("hidden");$("dashView").classList.add("hidden");$("adminView").classList.add("hidden");openDesigner();return;}
- if(v==="admin"){ $("setupView").classList.add("hidden");$("dashView").classList.add("hidden");$("adminView").classList.remove("hidden");$("navAdmin").classList.add("on");adminLoad();return;}
+ if(v==="admin"){location.assign("/admin");return;}
  $("adminView").classList.add("hidden");$("navAdmin").classList.remove("on");oldShow(v); if(v==="dash")loadProduct();
 };
 const oldEnter=enter;
