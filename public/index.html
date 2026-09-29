@@ -68,7 +68,10 @@ small{color:var(--mut)}.on small{color:#fff9}
 @media(max-width:560px){.g2{grid-template-columns:1fr}.idcard{width:100%;max-width:320px}}
 @media print{body>*:not(#printArea){display:none!important}body{background:#fff}#printArea{display:grid!important;grid-template-columns:repeat(2,320px);gap:14px;justify-content:center}.idcard{box-shadow:none;border:1px solid #ccc;break-inside:avoid}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style>
-</head>
+<style id="sellable-ui">
+@media(max-width:760px){.top{padding:10px 12px;gap:8px}.top .nav{order:3;width:100%;overflow:auto}.top .nav button{white-space:nowrap}.wrap{padding:12px 10px 80px}.dash{grid-template-columns:1fr}.setup{grid-template-columns:1fr}.panel{padding:14px}.g2{grid-template-columns:1fr}.types{grid-template-columns:1fr}.colors{grid-template-columns:1fr}.sticky{position:static}.idcard{max-width:100%}.mobile-stack{flex-direction:column;align-items:stretch}.mobile-stack .btn{width:100%}.search{font-size:16px}}
+.product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.product-box{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}.product-box b{display:block;margin-bottom:4px}.badge{display:inline-block;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;background:var(--tint);color:var(--pri)}.probox{border:1px solid #9cc0df;background:#f6fbff}.admin-table{width:100%;border-collapse:collapse}.admin-table th,.admin-table td{padding:9px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}.scroll-x{overflow:auto}@media(max-width:760px){.product-grid{grid-template-columns:1fr}.admin-table{min-width:650px}}
+</style></head>
 <body>
 <div id="toast" class="toast" role="status"></div>
 
@@ -87,10 +90,13 @@ small{color:var(--mut)}.on small{color:#fff9}
 
 <div id="appView" class="hidden">
 <header class="top"><div class="brand">School ID Maker</div>
-  <nav class="nav" id="nav"><button data-a="nav" data-v="dash" id="navDash">Students and cards</button><button data-a="nav" data-v="setup" id="navSetup">Organization settings</button></nav>
+  <nav class="nav" id="nav"><button data-a="nav" data-v="dash" id="navDash">Students and cards</button><button data-a="nav" data-v="setup" id="navSetup">Organization settings</button><button data-a="nav" data-v="admin" id="navAdmin" class="hidden">Admin</button></nav>
   <div class="row"><span id="hello"></span><button class="btn sm" id="logoutBtn">Log out</button></div>
 </header>
-<main class="wrap">
+<main class="wrap"><section id="adminView" class="panel hidden">
+<div class="sect"><div><h2>Platform admin</h2><div class="mut">Manage manual/COD activation requests.</div></div><button class="btn" data-a="adminRefresh">Refresh</button></div>
+<div id="adminStats" class="product-grid"></div><div class="scroll-x" style="margin-top:14px"><table class="admin-table"><thead><tr><th>Organization</th><th>Email</th><th>Plan</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody id="adminRows"></tbody></table></div>
+</section>
 <div id="setupView" class="setup hidden">
   <form id="orgForm" class="panel">
     <h2 id="setupTitle">Set up your organization</h2>
@@ -116,7 +122,20 @@ small{color:var(--mut)}.on small{color:#fff9}
   <div class="panel sticky"><h2>Card preview</h2><div class="stage"><div id="setupCard"></div></div><div class="hint">Sample student shown. Your real students appear once you add them.</div></div>
 </div>
 
-<div id="dashView" class="dash hidden">
+<section id="productPanel" class="panel" style="margin-bottom:18px">
+<div class="sect"><div><h2>Plan & product tools</h2><div class="mut">Manage limits, templates, bulk cards and activation.</div></div><span id="planBadge" class="badge">Free</span></div>
+<div class="product-grid">
+<div class="product-box"><b>Usage</b><div id="usageText" class="mut">Loading…</div></div>
+<div class="product-box"><b>Upgrade</b><div class="mut">Pro: ₹499 · manual/COD activation</div><button class="btn primary sm" data-a="cod">Request Pro activation</button></div>
+<div class="product-box"><b>Template</b><select id="templateSelect" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px"><option>Classic</option></select></div>
+</div>
+<div class="row mobile-stack" style="margin-top:12px">
+<button class="btn" data-a="bulkImport" >Import students from Excel</button>
+<button class="btn" data-a="pdfAll">Download selected section as PDF</button>
+<button class="btn" data-a="codes">QR / Barcode</button>
+</div>
+<div id="billingStatus" class="hint" style="margin-top:8px"></div>
+</section><div id="dashView" class="dash hidden">
   <aside class="panel side"><div class="head"><h2>Classes</h2><button class="btn sm primary" data-a="addclass">+ Class</button></div><div id="classList"></div></aside>
   <section class="panel" id="stuPanel"></section>
   <aside class="panel sticky"><h2>ID card preview</h2><div class="stage"><div id="card"></div></div><div class="row"><button class="btn primary" id="printOne" data-a="printone" disabled>Print this card</button></div></aside>
@@ -215,5 +234,61 @@ const A={
 document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;e.stopPropagation();const f=A[b.dataset.a];if(f)Promise.resolve(f(b.dataset)).catch(x=>toast(x.message,true))});
 setMode("login");
 (async()=>{try{me=(await api("/api/auth/me")).user;await enter()}catch{}})();
-</script>
+<script id="sellable-js">
+async function loadProduct(){
+ try{
+  const d=await api("/api/usage"); $("planBadge").textContent=d.planDetails.name;
+  $("usageText").textContent="Students "+d.usage.students_count+"/"+d.planDetails.students+" · Cards "+d.usage.cards_generated+"/"+d.planDetails.cards;
+  const t=await api("/api/templates");$("templateSelect").innerHTML=t.templates.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join("");
+  const b=await api("/api/billing/status");$("billingStatus").textContent=b.requests.length?"Latest request: "+b.requests[0].status:"No activation request yet.";
+ }catch(e){}
+}
+async function requestCOD(){
+ const note=prompt("Payment/reference note (optional):","COD / manual payment");
+ if(note===null)return;
+ try{await api("/api/billing/cod",J("POST",{note}));toast("Pro activation request submitted");loadProduct()}catch(e){toast(e.message,true)}
+}
+async function bulkImport(){
+ if(!cur)return toast("Select a section first.",true);
+ const inp=document.createElement("input");inp.type="file";inp.accept=".xlsx,.xls";
+ inp.onchange=async()=>{if(!inp.files[0])return;try{
+   const d=await api("/api/bulk-import/"+cur.id,{method:"POST",headers:{"Content-Type":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},body:await inp.files[0].arrayBuffer()});
+   toast("Imported "+d.inserted+" students");await pick(cur.id,cur.cid);await afterChange();loadProduct();
+ }catch(e){toast(e.message,true)}};inp.click();
+}
+async function pdfAll(){
+ if(!students.length)return toast("No students in this section.",true);
+ try{
+  const r=await fetch("/api/bulk-cards",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({students:students.map(s=>({name:s.name,studentId:s.student_id,bloodGroup:s.blood_group}))})});
+  if(!r.ok){const d=await r.json().catch(()=>({}));throw Error(d.message||"PDF generation failed");}
+  const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="id-cards.pdf";a.click();URL.revokeObjectURL(url);loadProduct();
+ }catch(e){toast(e.message,true)}
+}
+async function codes(){
+ const value=sel?(students.find(x=>x.id===sel)?.student_id||""):"";
+ if(!value)return toast("Select a student first.",true);
+ try{
+  const [q,b]=await Promise.all([api("/api/qr?value="+encodeURIComponent(value)),api("/api/barcode?value="+encodeURIComponent(value))]);
+  modal("QR & Barcode",'<div style="text-align:center"><p><b>'+esc(value)+'</b></p><img src="'+q.dataUrl+'" style="width:180px;height:180px;display:block;margin:auto"><img src="'+b.dataUrl+'" style="max-width:100%;margin-top:12px"></div>',"Close",async()=>{});
+ }catch(e){toast(e.message,true)}
+}
+async function adminLoad(){
+ try{
+  const d=await api("/api/admin/overview");$("adminStats").innerHTML='<div class="product-box"><b>Users</b>'+d.users+'</div><div class="product-box"><b>Organizations</b>'+d.organizations+'</div><div class="product-box"><b>Pro</b>'+d.proOrganizations+'</div><div class="product-box"><b>Pending COD</b>'+d.pendingPayments+'</div>';
+  const p=await api("/api/admin/payment-requests");
+  $("adminRows").innerHTML=p.requests.map(x=>'<tr><td>'+esc(x.organization_name)+'</td><td>'+esc(x.email)+'</td><td>'+esc(x.plan_code)+'</td><td>₹'+esc(x.amount)+'</td><td>'+esc(x.status)+'</td><td>'+(x.status==="pending"?'<button class="btn sm primary" data-a="approve" data-id="'+x.id+'">Approve</button> <button class="btn sm danger" data-a="reject" data-id="'+x.id+'">Reject</button>':"—")+'</td></tr>').join("");
+ }catch(e){toast(e.message,true)}
+}
+async function approvePayment(id,yes){
+ try{await api("/api/admin/payment-requests/"+id+"/"+(yes?"approve":"reject"),{method:"POST"});toast(yes?"Pro activated":"Request rejected");adminLoad()}catch(e){toast(e.message,true)}
+}
+const oldShow=show;
+show=function(v){
+ if(v==="admin"){ $("setupView").classList.add("hidden");$("dashView").classList.add("hidden");$("adminView").classList.remove("hidden");$("navAdmin").classList.add("on");adminLoad();return;}
+ $("adminView").classList.add("hidden");$("navAdmin").classList.remove("on");oldShow(v); if(v==="dash")loadProduct();
+};
+const oldEnter=enter;
+enter=async function(){await oldEnter();if(me?.role==="admin")$("navAdmin").classList.remove("hidden");if(org)loadProduct()};
+A.cod=requestCOD;A.bulkImport=bulkImport;A.pdfAll=pdfAll;A.codes=codes;A.adminRefresh=adminLoad;A.approve=d=>approvePayment(d.id,true);A.reject=d=>approvePayment(d.id,false);
+</script></script>
 </body></html>

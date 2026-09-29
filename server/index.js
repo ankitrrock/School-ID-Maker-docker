@@ -6,6 +6,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const { Pool } = require("pg");
+const { registerProductRoutes } = require("./product");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,14 +16,14 @@ fs.mkdirSync(uploadDir, { recursive: true });
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/school_id_maker" });
 const upload = multer({
-  dest: uploadDir,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_, file, cb) => cb(null, ["image/jpeg","image/png","image/webp"].includes(file.mimetype))
 });
 
 app.use(express.json({limit:"10mb"}));
+app.use("/api/bulk-import", express.raw({type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",limit:"10mb"}));
 app.use(cookieParser());
-app.use("/uploads", express.static(uploadDir));
 app.use(express.static(path.join(__dirname, "..", "public")));
 
 async function initDb() {
@@ -32,6 +33,7 @@ async function initDb() {
       name text not null,
       email text unique not null,
       password_hash text not null,
+      role text not null default 'user',
       created_at timestamptz not null default now()
     );
     create table if not exists organizations (
@@ -77,6 +79,11 @@ async function initDb() {
       unique(section_id,student_id)
     );
   `);
+  await pool.query("alter table users add column if not exists role text not null default 'user'");
+  await pool.query("alter table organizations add column if not exists plan text not null default 'free', add column if not exists subscription_status text not null default 'inactive', add column if not exists template_id text not null default 'classic'");
+  await pool.query("create table if not exists usage_counters (organization_id uuid primary key references organizations(id) on delete cascade, students_count integer not null default 0, cards_generated integer not null default 0, updated_at timestamptz not null default now())");
+  await pool.query("create table if not exists payment_requests (id uuid primary key default gen_random_uuid(), organization_id uuid not null references organizations(id) on delete cascade, user_id uuid not null references users(id) on delete cascade, plan_code text not null, amount numeric(12,2) not null default 0, status text not null default 'pending', note text not null default '', approved_at timestamptz, approved_by uuid references users(id), created_at timestamptz not null default now())");
+  if(process.env.ADMIN_EMAIL) await pool.query("update users set role='admin' where email=$1",[process.env.ADMIN_EMAIL.toLowerCase()]);
 }
 
 function auth(req,res,next) {
@@ -86,7 +93,7 @@ function auth(req,res,next) {
     next();
   } catch { res.status(401).json({message:"Please login first."}); }
 }
-function sign(user){ return jwt.sign({id:user.id,email:user.email,name:user.name},JWT_SECRET,{expiresIn:"7d"}); }
+function sign(user){ return jwt.sign({id:user.id,email:user.email,name:user.name,role:user.role||"user"},JWT_SECRET,{expiresIn:"7d"}); }
 function clean(v){ return String(v ?? "").trim(); }
 function validColor(v, fallback){ return /^#[0-9a-fA-F]{6}$/.test(v) ? v : fallback; }
 
@@ -96,32 +103,27 @@ app.post("/api/auth/signup", async (req,res)=>{
     if(!name||!email||password.length<6) return res.status(400).json({message:"Name, valid email and password of at least 6 characters are required."});
     const hash=await bcrypt.hash(password,12);
     const r=await pool.query("insert into users(name,email,password_hash) values($1,$2,$3) returning id,name,email",[name,email,hash]);
-    res.cookie("sid",sign(r.rows[0]),{httpOnly:true,sameSite:"lax",secure:false,maxAge:7*86400000});
+    res.cookie("sid",sign(r.rows[0]),{httpOnly:true,sameSite:"lax",secure:process.env.NODE_ENV==="production",maxAge:7*86400000});
     res.status(201).json({user:r.rows[0]});
   } catch(e){ if(e.code==="23505") return res.status(409).json({message:"Email already registered."}); console.error(e); res.status(500).json({message:"Signup failed."}); }
 });
 app.post("/api/auth/login", async (req,res)=>{
   const email=clean(req.body.email).toLowerCase(), password=String(req.body.password||"");
-  const r=await pool.query("select id,name,email,password_hash from users where email=$1",[email]);
+  const r=await pool.query("select id,name,email,password_hash,role from users where email=$1",[email]);
   if(!r.rows[0] || !(await bcrypt.compare(password,r.rows[0].password_hash))) return res.status(401).json({message:"Invalid email or password."});
-  const u={id:r.rows[0].id,name:r.rows[0].name,email:r.rows[0].email};
+  const u={id:r.rows[0].id,name:r.rows[0].name,email:r.rows[0].email,role:r.rows[0].role};
   res.cookie("sid",sign(u),{httpOnly:true,sameSite:"lax",secure:false,maxAge:7*86400000});
   res.json({user:u});
 });
 app.post("/api/auth/logout",(req,res)=>{res.clearCookie("sid");res.json({ok:true});});
 app.get("/api/auth/me",auth,async(req,res)=>res.json({user:req.user}));
+registerProductRoutes(app,pool,auth,upload);
 
 app.get("/api/organization",auth,async(req,res)=>{
   const r=await pool.query("select * from organizations where user_id=$1",[req.user.id]);
   res.json({organization:r.rows[0]||null});
 });
-app.post("/api/uploads",auth,upload.single("image"),async(req,res)=>{
-  if(!req.file) return res.status(400).json({message:"JPG, PNG or WEBP image is required."});
-  const ext=path.extname(req.file.originalname).toLowerCase() || ".jpg";
-  const target=path.join(uploadDir,`${req.user.id}-${Date.now()}${ext}`);
-  fs.renameSync(req.file.path,target);
-  res.status(201).json({url:`/uploads/${path.basename(target)}`});
-});
+app.post("/api/uploads",auth,upload.single("image"),async(req,res)=>{ if(!req.file)return res.status(400).json({message:"JPG, PNG or WEBP image is required."}); try{const a=await require("./product").uploadAsset(req.file.buffer,req.file.mimetype,"organizations/"+req.user.id,req.file.originalname);res.status(201).json({url:a.url,path:a.path});}catch(e){res.status(500).json({message:e.message});} });
 app.put("/api/organization",auth,async(req,res)=>{
   const type=["school","college","individual"].includes(clean(req.body.organizationType))?clean(req.body.organizationType):"school";
   const name=clean(req.body.name);

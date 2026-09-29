@@ -3,6 +3,20 @@
   "version": "2.0.0",
   "private": true,
   "description": "Sellable multi-tenant school, college and individual ID card maker",
-  "scripts": {"start":"node server/index.js"},
-  "dependencies": {"bcryptjs":"^3.0.2","cookie-parser":"^1.4.7","express":"^5.1.0","jsonwebtoken":"^9.0.2","multer":"^2.0.2","pg":"^8.16.3"}
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "pg": "^8.16.3",
+    "@supabase/supabase-js": "^2.57.0",
+    "bwip-js": "^4.7.0",
+    "pdfkit": "^0.17.2",
+    "qrcode": "^1.5.4",
+    "xlsx": "^0.18.5"
+  }
 }
