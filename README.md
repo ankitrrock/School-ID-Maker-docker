@@ -19,11 +19,11 @@ A multi-tenant ID-card platform for **schools, colleges and individual users**.
 ## Run
 
 ```bash
-python run.py
+docker compose up --build
 ```
 
-Requires Docker Compose v2 and Python 3. The launcher creates a random JWT secret
-and starts PostgreSQL and the application. Open http://localhost:3000.
+Requires Docker Compose v2. The app automatically generates its JWT signing
+secret and saves it in a persistent Docker volume. No `.env` is needed. Open http://localhost:3000.
 
 For local Node setup, storage, production configuration, and tests, see
 [RUN_LOCAL.md](RUN_LOCAL.md).

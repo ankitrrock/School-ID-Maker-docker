@@ -6,7 +6,7 @@ Usage:
     python run.py            # build (if needed) and start db, then app
     python run.py up         # same as above
     python run.py down       # stop and remove the containers
-    python run.py down -v    # also delete the Postgres data volume
+    python run.py down -v    # also delete database, upload and JWT-secret volumes
     python run.py logs       # tail logs from all services
     python run.py status     # show container status
 
@@ -16,14 +16,12 @@ Requires: Docker Desktop (or Docker Engine) with Compose v2, running.
 from __future__ import annotations
 
 import argparse
-import secrets
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent
-ENV_FILE = REPO_ROOT / ".env"
 API_URL = "http://localhost:3000/api/healthz"
 WEB_URL = "http://localhost:3000"
 
@@ -49,16 +47,6 @@ def find_compose_command() -> list[str]:
     )
 
 
-def ensure_env_file() -> None:
-    """Create a .env with a random JWT_SECRET on first run, so nobody ships the default."""
-    if ENV_FILE.exists():
-        return
-    secret = secrets.token_hex(32)
-    ENV_FILE.write_text(f"JWT_SECRET={secret}\n", encoding="utf-8")
-    ENV_FILE.chmod(0o600)
-    print(f"Created {ENV_FILE.name} with a freshly generated JWT_SECRET.")
-
-
 def run(compose: list[str], *args: str) -> None:
     print(f"\n$ {' '.join(compose + list(args))}")
     result = subprocess.run(compose + list(args), cwd=REPO_ROOT)
@@ -71,7 +59,6 @@ def step(title: str) -> None:
 
 
 def up() -> None:
-    ensure_env_file()
     compose = find_compose_command()
 
     step("1/2 Starting database (postgres)")
