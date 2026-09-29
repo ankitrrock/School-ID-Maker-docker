@@ -22,6 +22,7 @@ const upload = multer({
 });
 
 app.use(express.json({limit:"10mb"}));
+app.use("/api/bulk-import", express.raw({type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",limit:"10mb"}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "..", "public")));
 
