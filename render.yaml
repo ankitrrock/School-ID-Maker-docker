@@ -3,11 +3,14 @@ services:
     name: school-id-maker
     runtime: docker
     plan: free
+    healthCheckPath: /api/healthz
     envVars:
       - key: PORT
         value: "3000"
       - key: NODE_ENV
         value: production
+      - key: TRUST_PROXY_HOPS
+        value: "1"
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
