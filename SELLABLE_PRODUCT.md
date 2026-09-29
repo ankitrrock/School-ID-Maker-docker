@@ -33,7 +33,7 @@ Pro: 5,000 students, 5,000 generated cards, 3 templates, Excel bulk import.
 - Card templates
 - QR code
 - Code 128 barcode
-- Bulk Excel import
+- Bulk XLSX import
 - Bulk PDF ID-card generation
 - Browser printing
 - Usage dashboard
@@ -53,11 +53,11 @@ The service-role key must remain server-side.
 
 ## Render
 
-Deploy the sellable-v1 branch as a Docker web service and configure DATABASE_URL, JWT_SECRET, ADMIN_EMAIL and Supabase variables. The Render blueprint is in render.yaml.
+Deploy the current branch as a Docker web service and configure DATABASE_URL, JWT_SECRET, ADMIN_EMAIL and Supabase variables. The Render blueprint is in render.yaml.
 
 ## Admin
 
-Set ADMIN_EMAIL to the email that should receive platform-admin privileges. The Admin navigation shows customer counts, Pro organizations, pending COD requests and approve/reject controls.
+First register an account you control, then set ADMIN_EMAIL to that email and restart before opening public registration. The Admin navigation shows customer counts, Pro organizations, pending COD requests and approve/reject controls.
 
 ## Excel columns
 
@@ -73,3 +73,7 @@ Accepted columns: student_id, name, date_of_birth, gender, blood_group, father_n
 - Configure PostgreSQL backups and retention.
 - Add Razorpay only when online payments are enabled.
 - Test PDF printing on the target ID-card paper dimensions.
+
+## Export and quota details
+
+See RUN_LOCAL.md and README.md for current runtime instructions. Imports accept XLSX only and roll back on invalid or duplicate rows. Exports are limited to 100 cards per request; successful PDF generation consumes cumulative card quota. Browser print buttons use the same PDF endpoint. Uploaded images are included in exports; external HTTPS image links are preview-only.

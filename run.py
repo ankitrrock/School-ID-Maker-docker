@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Run School-ID-Maker with Docker: database -> backend -> frontend, in order.
+Run School-ID-Maker with Docker: database -> application, in order.
 
 Usage:
-    python run.py            # build (if needed) and start db, then api, then web
+    python run.py            # build (if needed) and start db, then app
     python run.py up         # same as above
     python run.py down       # stop and remove the containers
     python run.py down -v    # also delete the Postgres data volume
@@ -20,13 +20,12 @@ import secrets
 import shutil
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent
 ENV_FILE = REPO_ROOT / ".env"
-API_URL = "http://localhost:3001/api/healthz"
-WEB_URL = "http://localhost:8080"
+API_URL = "http://localhost:3000/api/healthz"
+WEB_URL = "http://localhost:3000"
 
 
 def find_compose_command() -> list[str]:
@@ -56,6 +55,7 @@ def ensure_env_file() -> None:
         return
     secret = secrets.token_hex(32)
     ENV_FILE.write_text(f"JWT_SECRET={secret}\n", encoding="utf-8")
+    ENV_FILE.chmod(0o600)
     print(f"Created {ENV_FILE.name} with a freshly generated JWT_SECRET.")
 
 
@@ -74,17 +74,11 @@ def up() -> None:
     ensure_env_file()
     compose = find_compose_command()
 
-    step("1/3 Starting database (postgres)")
+    step("1/2 Starting database (postgres)")
     run(compose, "up", "-d", "--wait", "db")
 
-    step("2/3 Building and starting backend (api)")
-    run(compose, "up", "-d", "--build", "--wait", "api")
-
-    step("3/3 Building and starting frontend (web)")
-    run(compose, "up", "-d", "--build", "web")
-
-    # web has no healthcheck (it's static nginx), so give it a moment to come up.
-    time.sleep(2)
+    step("2/2 Building and starting application (app)")
+    run(compose, "up", "-d", "--build", "--wait", "app")
 
     print("\nAll services are up.")
     print(f"  Frontend: {WEB_URL}")
@@ -115,7 +109,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command")
 
-    sub.add_parser("up", help="Start db, then api, then web (default)")
+    sub.add_parser("up", help="Start db, then app (default)")
 
     down_parser = sub.add_parser("down", help="Stop and remove containers")
     down_parser.add_argument(

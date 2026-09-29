@@ -19,8 +19,22 @@ services:
       - "3000:3000"
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/school_id_maker
-      JWT_SECRET: change-this-in-production
+      JWT_SECRET: ${JWT_SECRET:?Run python run.py or set JWT_SECRET to a random secret of at least 32 characters}
+      NODE_ENV: ${NODE_ENV:-development}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      SUPABASE_BUCKET: ${SUPABASE_BUCKET:-id-card-assets}
+      FREE_STUDENT_LIMIT: ${FREE_STUDENT_LIMIT:-50}
+      FREE_CARD_LIMIT: ${FREE_CARD_LIMIT:-50}
+      PRO_STUDENT_LIMIT: ${PRO_STUDENT_LIMIT:-5000}
+      PRO_CARD_LIMIT: ${PRO_CARD_LIMIT:-5000}
       PORT: 3000
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
     volumes:
       - uploads:/app/data/uploads
     depends_on:

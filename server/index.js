@@ -4,29 +4,13 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
+const { rateLimit } = require("express-rate-limit");
 const { Pool } = require("pg");
-const { registerProductRoutes } = require("./product");
+const { registerProductRoutes, insertStudent } = require("./product");
+const { createStorage } = require("./storage");
+const { problem, requireLimit, withOrganization } = require("./limits");
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || "dev-only-secret";
-const uploadDir = path.join(__dirname, "..", "data", "uploads");
-fs.mkdirSync(uploadDir, { recursive: true });
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/school_id_maker" });
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_, file, cb) => cb(null, ["image/jpeg","image/png","image/webp"].includes(file.mimetype))
-});
-
-app.use(express.json({limit:"10mb"}));
-app.use("/api/bulk-import", express.raw({type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",limit:"10mb"}));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "..", "public")));
-
-async function initDb() {
+async function initDb(pool) {
   await pool.query(`
     create table if not exists users (
       id uuid primary key default gen_random_uuid(),
@@ -86,24 +70,46 @@ async function initDb() {
   if(process.env.ADMIN_EMAIL) await pool.query("update users set role='admin' where email=$1",[process.env.ADMIN_EMAIL.toLowerCase()]);
 }
 
-function auth(req,res,next) {
-  const token = req.cookies.sid;
-  try {
-    req.user = jwt.verify(token, JWT_SECRET);
+function createApp({ pool, jwtSecret = process.env.JWT_SECRET, storage = createStorage(), authLimit = 30 } = {}) {
+  if (!jwtSecret || jwtSecret.length < 32 || /replace-with|change-this|dev-only/.test(jwtSecret)) {
+    throw new Error('JWT_SECRET must be a random secret of at least 32 characters.');
+  }
+  const app = express();
+  app.disable('x-powered-by');
+  // Set only when the deployment has a known number of trusted proxy hops.
+  if (process.env.TRUST_PROXY_HOPS) app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS));
+  const cookie = { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' };
+  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
+  app.use(express.json({ limit: '1mb' }));
+  app.use('/api/bulk-import', express.raw({ type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', limit: '10mb' }));
+  app.use(cookieParser());
+  app.use((req, res, next) => { res.set('X-Content-Type-Options', 'nosniff'); res.set('Referrer-Policy', 'same-origin'); next(); });
+  app.use(express.static(path.join(__dirname, '..', 'public')));
+  const limiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: authLimit, standardHeaders: 'draft-7', legacyHeaders: false,
+    message: { message: 'Too many sign-in attempts. Try again later.' } });
+  app.use(['/api/auth/signup', '/api/auth/login'], limiter);
+  app.get('/api/healthz', async (req, res) => { await pool.query('select 1'); res.json({ status: 'ok' }); });
+  async function auth(req, res, next) {
+    let claims;
+    try { claims = jwt.verify(req.cookies.sid, jwtSecret, { algorithms: ['HS256'] }); }
+    catch { throw problem(401, 'Please login first.'); }
+    if (typeof claims.id !== 'string' || !/^[a-f0-9-]{36}$/.test(claims.id)) throw problem(401, 'Please login first.');
+    const user = (await pool.query('select id,name,email,role from users where id=$1', [claims.id])).rows[0];
+    if (!user) throw problem(401, 'Please login first.');
+    req.user = user;
     next();
-  } catch { res.status(401).json({message:"Please login first."}); }
-}
-function sign(user){ return jwt.sign({id:user.id,email:user.email,name:user.name,role:user.role||"user"},JWT_SECRET,{expiresIn:"7d"}); }
-function clean(v){ return String(v ?? "").trim(); }
-function validColor(v, fallback){ return /^#[0-9a-fA-F]{6}$/.test(v) ? v : fallback; }
+  }
+  function sign(user) { return jwt.sign({ id: user.id }, jwtSecret, { expiresIn: '7d', algorithm: 'HS256' }); }
+  function clean(value) { return String(value ?? '').trim(); }
+  function validColor(value, fallback) { return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback; }
 
 app.post("/api/auth/signup", async (req,res)=>{
   try {
     const name=clean(req.body.name), email=clean(req.body.email).toLowerCase(), password=String(req.body.password||"");
-    if(!name||!email||password.length<6) return res.status(400).json({message:"Name, valid email and password of at least 6 characters are required."});
+    if(!name || name.length > 150 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254 || password.length < 8 || Buffer.byteLength(password) > 72) return res.status(400).json({message:"Name, valid email and password of 8–72 bytes are required."});
     const hash=await bcrypt.hash(password,12);
-    const r=await pool.query("insert into users(name,email,password_hash) values($1,$2,$3) returning id,name,email",[name,email,hash]);
-    res.cookie("sid",sign(r.rows[0]),{httpOnly:true,sameSite:"lax",secure:process.env.NODE_ENV==="production",maxAge:7*86400000});
+    const r=await pool.query("insert into users(name,email,password_hash) values($1,$2,$3) returning id,name,email,role",[name,email,hash]);
+    res.cookie("sid",sign(r.rows[0]),{...cookie,maxAge:7*86400000});
     res.status(201).json({user:r.rows[0]});
   } catch(e){ if(e.code==="23505") return res.status(409).json({message:"Email already registered."}); console.error(e); res.status(500).json({message:"Signup failed."}); }
 });
@@ -112,23 +118,23 @@ app.post("/api/auth/login", async (req,res)=>{
   const r=await pool.query("select id,name,email,password_hash,role from users where email=$1",[email]);
   if(!r.rows[0] || !(await bcrypt.compare(password,r.rows[0].password_hash))) return res.status(401).json({message:"Invalid email or password."});
   const u={id:r.rows[0].id,name:r.rows[0].name,email:r.rows[0].email,role:r.rows[0].role};
-  res.cookie("sid",sign(u),{httpOnly:true,sameSite:"lax",secure:false,maxAge:7*86400000});
+  res.cookie("sid",sign(u),{...cookie,maxAge:7*86400000});
   res.json({user:u});
 });
-app.post("/api/auth/logout",(req,res)=>{res.clearCookie("sid");res.json({ok:true});});
+app.post("/api/auth/logout",(req,res)=>{res.clearCookie("sid",cookie);res.json({ok:true});});
 app.get("/api/auth/me",auth,async(req,res)=>res.json({user:req.user}));
-registerProductRoutes(app,pool,auth,upload);
+registerProductRoutes(app,pool,auth,upload,storage);
 
 app.get("/api/organization",auth,async(req,res)=>{
   const r=await pool.query("select * from organizations where user_id=$1",[req.user.id]);
-  res.json({organization:r.rows[0]||null});
+  const org = r.rows[0];
+  res.json({organization:org ? {...org,image_url:storage.stableUrl(org.image_url)} : null});
 });
-app.post("/api/uploads",auth,upload.single("image"),async(req,res)=>{ if(!req.file)return res.status(400).json({message:"JPG, PNG or WEBP image is required."}); try{const a=await require("./product").uploadAsset(req.file.buffer,req.file.mimetype,"organizations/"+req.user.id,req.file.originalname);res.status(201).json({url:a.url,path:a.path});}catch(e){res.status(500).json({message:e.message});} });
 app.put("/api/organization",auth,async(req,res)=>{
   const type=["school","college","individual"].includes(clean(req.body.organizationType))?clean(req.body.organizationType):"school";
   const name=clean(req.body.name);
-  if(!name) return res.status(400).json({message:"Organization name is required."});
-  const values=[req.user.id,type,name,clean(req.body.tagline),clean(req.body.address),clean(req.body.phone),clean(req.body.academicYear),req.body.imageUrl||null,validColor(req.body.backgroundColor,"#ffffff"),validColor(req.body.textColor,"#111827")];
+  if(!name || name.length > 150) return res.status(400).json({message:"Organization name is required."});
+  const values=[req.user.id,type,name,clean(req.body.tagline),clean(req.body.address),clean(req.body.phone),clean(req.body.academicYear),await storage.validateUrl(pool,req.user.id,req.body.imageUrl),validColor(req.body.backgroundColor,"#ffffff"),validColor(req.body.textColor,"#111827")];
   const r=await pool.query(`
     insert into organizations(user_id,organization_type,name,tagline,address,phone,academic_year,image_url,background_color,text_color)
     values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
@@ -168,22 +174,22 @@ app.get("/api/sections/:id/students",auth,async(req,res)=>{
   const oid=await orgId(req);
   const r=await pool.query(`select st.* from students st where st.section_id=$1 and exists(
     select 1 from sections s join classes c on c.id=s.class_id where s.id=st.section_id and c.organization_id=$2) order by st.name`,[req.params.id,oid]);
-  res.json({students:r.rows});
+  res.json({students:r.rows.map(student=>({...student,photo_url:storage.stableUrl(student.photo_url)}))});
 });
-app.post("/api/sections/:id/students",auth,async(req,res)=>{
-  const oid=await orgId(req);
-  try{
-    const r=await pool.query(`insert into students(section_id,student_id,name,date_of_birth,gender,blood_group,father_name,phone,address,photo_url)
-      select $1,$2,$3,$4,$5,$6,$7,$8,$9,$10 where exists(
-      select 1 from sections s join classes c on c.id=s.class_id where s.id=$1 and c.organization_id=$11) returning *`,
-      [req.params.id,clean(req.body.studentId),clean(req.body.name),clean(req.body.dateOfBirth),clean(req.body.gender),clean(req.body.bloodGroup),clean(req.body.fatherName),clean(req.body.phone),clean(req.body.address),req.body.photoUrl||null,oid]);
-    if(!r.rows[0])return res.status(404).json({message:"Section not found."});res.status(201).json({student:r.rows[0]});
-  }catch(e){res.status(e.code==="23505"?409:500).json({message:e.code==="23505"?"Student ID already exists in this section.":"Could not create student."});}
+app.post('/api/sections/:id/students', auth, async (req, res) => {
+  const student = await withOrganization(pool, req.user.id, async (db, org) => {
+    await requireLimit(db, org, 'students', 1);
+    return insertStudent(db, org, req.params.id, req.body, storage);
+  });
+  res.status(201).json({ student });
 });
-app.delete("/api/students/:id",auth,async(req,res)=>{
-  const oid=await orgId(req);
-  const r=await pool.query(`delete from students where id=$1 and exists(select 1 from sections s join classes c on c.id=s.class_id where s.id=students.section_id and c.organization_id=$2) returning id`,[req.params.id,oid]);
-  if(!r.rows[0])return res.status(404).json({message:"Student not found."});res.status(204).send();
+app.delete('/api/students/:id', auth, async (req, res) => {
+  await withOrganization(pool, req.user.id, async (db, org) => {
+    const result = await db.query(`delete from students where id=$1 and exists(select 1 from sections s
+      join classes c on c.id=s.class_id where s.id=students.section_id and c.organization_id=$2) returning id`, [req.params.id, org.id]);
+    if (!result.rows.length) throw problem(404, 'Student not found.');
+  });
+  res.status(204).send();
 });
 
 app.use((req,res,next)=>{
@@ -193,4 +199,24 @@ app.use((req,res,next)=>{
   next();
 });
 
-initDb().then(()=>app.listen(PORT,()=>console.log(`School ID Maker running on http://localhost:${PORT}`))).catch(e=>{console.error(e);process.exit(1)});
+app.use('/api', (req, res) => res.status(404).json({ message: 'Endpoint not found.' }));
+app.use((error, req, res, next) => {
+  if (res.headersSent) return next(error);
+  const status = error.code === '23505' ? 409 : error.code === '22P02' ? 400 : error instanceof multer.MulterError ? 400 : error.status || 500;
+  if (status >= 500) console.error(error);
+  res.status(status).json({ message: error.code === '23505' ? 'This record already exists.' : status >= 500 ? 'Unable to complete the request.' : error.code === '22P02' ? 'Invalid identifier.' : error.message });
+});
+return app;
+}
+
+if (require.main === module) {
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const app = createApp({ pool });
+  initDb(pool).then(() => {
+    const server = app.listen(process.env.PORT || 3000, () => console.log('School ID Maker is ready.'));
+    const stop = () => server.close(() => pool.end().then(() => process.exit(0)));
+    process.on('SIGTERM', stop);
+    process.on('SIGINT', stop);
+  }).catch(error => { console.error(error); pool.end().finally(() => process.exit(1)); });
+}
+module.exports = { createApp, initDb };
