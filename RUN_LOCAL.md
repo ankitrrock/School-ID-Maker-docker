@@ -16,6 +16,8 @@ No `.env` or manual JWT setup is needed. On first startup the container generate
 a cryptographically random 256-bit JWT signing secret, stored with private file
 permissions in the `jwt_secrets` Docker volume. Rebuilds and container restarts
 reuse it, so existing login sessions stay valid until they expire.
+Compose prepares ownership of the upload and secret volumes before starting the
+application, including volumes created by an earlier version.
 
 Open http://localhost:3000. Health: http://localhost:3000/api/healthz.
 JWT session tokens are issued when a user signs up or logs in.
